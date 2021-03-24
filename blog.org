@@ -61,7 +61,7 @@ With some text underneath!
 
 [[file:static/static/another_one.jpg]]
 
-** Are bus errors still commonplace?                            :C:low:level:
+** Are bus errors still commonplace?                            :C:low_level:@programming:
 :PROPERTIES:
 :EXPORT_FILE_NAME: bus_errors_1
 :EXPORT_DATE: 2021-03-24
