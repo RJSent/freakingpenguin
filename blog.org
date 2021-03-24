@@ -1,0 +1,49 @@
+#+AUTHOR: RIchard Sent
+#+HUGO_BASE_DIR: ./
+
+
+* About
+:PROPERTIES:
+:EXPORT_FILE_NAME: about
+:END:
+
+
+* Posts
+
+** Testing ox-hugo
+:PROPERTIES:
+:EXPORT_FILE_NAME: testing-ox-hugo
+:EXPORT_DATE: 2021-03-24
+:END:
+
+This is some text.
+
+Here is an inline equation! \( F = ma \)
+
+Here is an equation with the square brackets.
+
+\[ \lambda = \frac{4309248302}{a_4 785494} \]
+
+Here's a source block
+
+#+begin_src C :includes stdio.h
+  printf("Hello world!");
+#+end_src
+
+#+RESULTS:
+: Hello world!
+
+*** And here is a subheading!
+
+With some text underneath!
+
+*** Another one!
+
+[[file:static/another_one.jpg]]
+
+** TODO stm8-card: Part 1
+:PROPERTIES:
+:EXPORT_FILE_NAME: stm8-card-1
+:EXPORT_DATE: 2021-03-24
+:END:
+
