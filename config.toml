@@ -8,12 +8,12 @@ theme = "hugo-flex"
     intro = true
     headline = "My headline"
     description = "My description"
-    github = "https://github.com/RJSent"
+    gitlab = "https://gitlab.com/RJSent"
     email = "richard@freakingpenguin.com"
     opengraph = true
     dateFormat = "Mon, Jan 2, 2006"
     color = "#800020"
-    footer = ""
+    footer = true
 
 [Permalinks]
     posts = "posts/:filename/"
