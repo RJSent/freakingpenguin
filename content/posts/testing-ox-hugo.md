@@ -27,4 +27,4 @@ With some text underneath!
 
 ## Another one! {#another-one}
 
-{{< figure src="/another_one.jpg" >}}
+{{< figure src="/static/another_one.jpg" >}}

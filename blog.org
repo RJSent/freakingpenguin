@@ -5,10 +5,15 @@
 * About
 :PROPERTIES:
 :EXPORT_FILE_NAME: about
+:EXPORT_HUGO_SECTION: /
+:EXPORT_HUGO_CUSTOM_FRONT_MATTER: :type about
 :END:
 
 
 * Posts
+:PROPERTIES:
+:EXPORT_HUGO_SECTION: posts
+:END:
 
 ** Testing ox-hugo
 :PROPERTIES:
@@ -39,7 +44,7 @@ With some text underneath!
 
 *** Another one!
 
-[[file:static/another_one.jpg]]
+[[file:static/static/another_one.jpg]]
 
 ** TODO stm8-card: Part 1
 :PROPERTIES:
