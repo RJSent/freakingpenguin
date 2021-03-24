@@ -1,0 +1,49 @@
+#!/usr/bin/env sh
+:; set -e # -*- mode: emacs-lisp; lexical-binding: t -*-
+:; emacs --no-site-file --script "$0" -- "$@" || __EXITCODE=$?
+:; exit ${__EXITCODE:-0}
+;; This code was taken from michaeljherold.com/articles/using-ox-hugo-without-duplication/
+(defvar bootstrap-version)
+(defvar straight-base-dir)
+;; (defvar straight-fix-org)
+(defvar straight-vc-git-default-clone-depth 1)
+(defvar publish--straight-repos-dir)
+
+(setq gc-cons-threshold 83886080 ; 80MiB
+      straight-base-dir (expand-file-name "../.." (or load-file-name buffer-file-name))
+      ;; straight-fix-org t
+      straight-vc-git-default-clone-depth 1
+      publish--straight-repos-dir (expand-file-name "straight/repos/" straight-base-dir))
+
+(let ((bootstrap-file (expand-file-name "straight/repos/straight.el/bootstrap.el" straight-base-dir))
+      (bootstrap-version 5))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+	(url-retrieve-synchronously
+	 "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+	 'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+
+(straight-use-package
+ '(org-mode :type git
+	    :host github
+	    :repo "emacs-straight/org-mode"
+	    :files ("*.el" "lisp/*.el" "contrib/lisp/*.el")))
+
+(straight-use-package
+ '(ox-hugo :type git
+	   :host github
+	   :repo "kaushalmodi/ox-hugo"
+	   :nonrecursive t))
+
+(with-current-buffer (find-file-noselect (expand-file-name "blog.org" "."))
+  (org-next-visible-heading 1)
+
+  (when (equal (org-entry-get (point) "CUSTOM_ID") "toc")
+    (let ((inhibit-message t))
+      (org-cut-subtree)))
+
+  (message "Publishing...")
+  (org-hugo-export-wim-to-md t))
