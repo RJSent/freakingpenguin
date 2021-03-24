@@ -26,12 +26,12 @@
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 
-(straight-use-package
- '(org-mode :type git
-	    :host github
-	    :repo "emacs-straight/org-mode"
-	    :files ("*.el" "lisp/*.el" "contrib/lisp/*.el")))
-
+;; ox-hugo clones org as dependency, redundant (also org != org-mode apparently??)
+;; (straight-use-package
+;;  '(org-mode :type git
+;; 	    :host github
+;; 	    :repo "emacs-straight/org-mode"
+;; 	    :files ("*.el" "lisp/*.el" "contrib/lisp/*.el")))
 (straight-use-package
  '(ox-hugo :type git
 	   :host github
