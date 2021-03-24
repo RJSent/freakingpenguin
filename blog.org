@@ -61,7 +61,7 @@ With some text underneath!
 
 [[file:static/static/another_one.jpg]]
 
-** Are bus errors still commonplace?
+** Are bus errors still commonplace?                            :C:low:level:
 :PROPERTIES:
 :EXPORT_FILE_NAME: bus_errors_1
 :EXPORT_DATE: 2021-03-24
@@ -85,17 +85,17 @@ Using the sample code in /Expert C Programming: Deep C Secrets/, pg.
 
 From what I'm seeing online, x86 is very forgiving when it comes to
 misalignment errors. By adding the ~-fsanitize=undefined~ compile flag,
-the code will then have a runtime error. ~-Wall~ does not have an effect
-(no compile time warnings), it's mainly there because of no reason.
+the code will then have a runtime error. ~-Wall~ does not have an
+effect as this is not a compile-time issue, but a runtime one.
 
 Curiously, this isn't happening in org, only when I compile + run
-seperately. 17 is still printed, but the runtime error is not. Is it
-printed to standard error? How can I get that printed in =org=?
+seperately. 17 is still printed, but the runtime error is not. I
+suspect that org isn't telling us ~stderr~, only ~stdout~.
 
-There are similar flags ~-fsanitize=address~ and ~-fsanitize=thread~ that
-can be useful; look at the =gcc= manual for more information. I can
-combine these some/all options by doing
-~-fsanitize=address,thread,undefined~.
+There are similar flags ~-fsanitize=address~ and ~-fsanitize=thread~
+that can be useful for runtime error checking; look at the =gcc=
+manual for more information. I can combine these some/all options by
+doing ~-fsanitize=address,thread,undefined~.
 
 *** Fixing stderr in org-babel
 
@@ -104,13 +104,6 @@ Noting how the above source block is not outputing ~stderr~ in the
 duplicate the ~stdout~ file descriptor to take ~stderr~'s place. This
 should (presumably) output ~stderr~ to ~stdout~, letting me see the
 results of the runtime error.
-
-When running this, I originally used ~stdout~ and ~stderr~ instead of
-~STDOUT_FILENO~ and ~STDERR_FILENO~. ~stdout~ and ~stderr~ in =unistd.h= are
-pointers to ~FILE~, not integers like ~dup2~ expects. ~dup2~ silently failed
-(since I'm not checking it), leading me to think something weird was
-going on that wasn't. (At least, something weird I wasn't causing.
-That's not the case though. 100% my fault.)
 
 #+begin_src C :includes stdio.h unistd.h :flags -Wall -fsanitize=undefined :results verbatim :exports both
   dup2(STDOUT_FILENO, STDERR_FILENO);
@@ -135,6 +128,12 @@ That's not the case though. 100% my fault.)
 :              ^ 
 : p 17
 
+When running this, I originally used ~stdout~ and ~stderr~ instead of
+~STDOUT_FILENO~ and ~STDERR_FILENO~. ~stdout~ and ~stderr~ in
+=unistd.h= are pointers to ~FILE~, not integers like ~dup2~ expects.
+~dup2~ silently failed, leading me to think something weird was going
+on that wasn't.
+
 I would like to know how to not have any recovery whatsoever, and
 instead let the program immediately crash.
 
@@ -149,7 +148,9 @@ the former enables recovery for all sanitizers that support it, the
 latter disables recovery for all sanitizers that support it.
 #+end_quote
 
-Let's try it!
+Let's try it! I'm going to add ~-fno-sanitize-recover=all~ as a
+compile flag. This should cause the program to immediately crash,
+only printing the error message.
 
 #+begin_src C :includes stdio.h unistd.h :flags -Wall -fsanitize=undefined -fno-sanitize-recover=all :results verbatim :exports both
   dup2(STDOUT_FILENO, STDERR_FILENO);
@@ -174,7 +175,6 @@ separate temporary buffer. At least this works outside of =org-babel=.
 See a (brief) discussion of this issue on the mailing list [[https://lists.gnu.org/archive/html/emacs-orgmode/2016-05/msg00204.html][here]]. There
 is an easy solution for ~sh~ scripts; just create a line at the end with
 ~:~. Unfortunately since this is C, that's not really an option.
-
 
 ** TODO stm8-card: Part 1
 :PROPERTIES:
