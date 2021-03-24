@@ -17,8 +17,6 @@ This is the home of my blog!
 :EXPORT_HUGO_SECTION: /
 :END:
 
-,:EXPORT_HUGO_CUSTOM_FRONT_MATTER: :type about (Maybe not needed)
-
 * Posts
 :PROPERTIES:
 :EXPORT_HUGO_SECTION: posts
@@ -32,7 +30,7 @@ This is the home of my blog!
 
 Man, look at all my blog posts.
 
-** Testing ox-hugo
+** COMMENT Testing ox-hugo
 :PROPERTIES:
 :EXPORT_FILE_NAME: testing-ox-hugo
 :EXPORT_DATE: 2021-03-24
@@ -62,6 +60,121 @@ With some text underneath!
 *** Another one!
 
 [[file:static/static/another_one.jpg]]
+
+** Are bus errors still commonplace?
+:PROPERTIES:
+:EXPORT_FILE_NAME: bus_errors_1
+:EXPORT_DATE: 2021-03-24
+:END:
+
+Using the sample code in /Expert C Programming: Deep C Secrets/, pg.
+189, I am going to see if it causes a bus error.
+
+#+begin_src C :includes stdio.h :flags -Wall -fsanitize=undefined :exports both
+  union {
+    char a[10];
+    int i;
+  } u;
+  int *p = (int *) &(u.a[1]);
+  ,*p = 17;
+  printf("p %d\n", *p);
+#+end_src
+
+#+RESULTS:
+: p 17
+
+From what I'm seeing online, x86 is very forgiving when it comes to
+misalignment errors. By adding the ~-fsanitize=undefined~ compile flag,
+the code will then have a runtime error. ~-Wall~ does not have an effect
+(no compile time warnings), it's mainly there because of no reason.
+
+Curiously, this isn't happening in org, only when I compile + run
+seperately. 17 is still printed, but the runtime error is not. Is it
+printed to standard error? How can I get that printed in =org=?
+
+There are similar flags ~-fsanitize=address~ and ~-fsanitize=thread~ that
+can be useful; look at the =gcc= manual for more information. I can
+combine these some/all options by doing
+~-fsanitize=address,thread,undefined~.
+
+*** Fixing stderr in org-babel
+
+Noting how the above source block is not outputing ~stderr~ in the
+~RESULTS:~ section, I'm going to attempt to close ~stderr~ as a file, then
+duplicate the ~stdout~ file descriptor to take ~stderr~'s place. This
+should (presumably) output ~stderr~ to ~stdout~, letting me see the
+results of the runtime error.
+
+When running this, I originally used ~stdout~ and ~stderr~ instead of
+~STDOUT_FILENO~ and ~STDERR_FILENO~. ~stdout~ and ~stderr~ in =unistd.h= are
+pointers to ~FILE~, not integers like ~dup2~ expects. ~dup2~ silently failed
+(since I'm not checking it), leading me to think something weird was
+going on that wasn't. (At least, something weird I wasn't causing.
+That's not the case though. 100% my fault.)
+
+#+begin_src C :includes stdio.h unistd.h :flags -Wall -fsanitize=undefined :results verbatim :exports both
+  dup2(STDOUT_FILENO, STDERR_FILENO);
+
+  union {
+    char a[10];
+    int i;
+  } u;
+  int *p = (int *) &(u.a[1]);
+  ,*p = 17;
+  printf("p %d\n", *p);
+#+end_src
+
+#+RESULTS:
+: /tmp/babel-6GBGFa/C-src-VBXfFC.c:17:4: runtime error: store to misaligned address 0x7ffe89c23dfd for type 'int', which requires 4 byte alignment
+: 0x7ffe89c23dfd: note: pointer points here
+:  f0 1f 6d f1 55 00 00  00 3f c2 89 fe 7f 00 00  00 b6 b9 73 9b 68 69 05  00 00 00 00 00 00 00 00  25
+:              ^ 
+: /tmp/babel-6GBGFa/C-src-VBXfFC.c:18:1: runtime error: load of misaligned address 0x7ffe89c23dfd for type 'int', which requires 4 byte alignment
+: 0x7ffe89c23dfd: note: pointer points here
+:  f0 1f 6d f1 11 00 00  00 3f c2 89 fe 7f 00 00  00 b6 b9 73 9b 68 69 05  00 00 00 00 00 00 00 00  25
+:              ^ 
+: p 17
+
+I would like to know how to not have any recovery whatsoever, and
+instead let the program immediately crash.
+
+*** Crash and burn programming
+
+I looked through the =gcc= manual and saw the ~-fno-sanitize-recover=all~
+option. Supposedly, it does the following:
+
+#+begin_quote
+~-fsanitize-recover=all~ and ~-fno-sanitize-recover=all~ is also accepted,
+the former enables recovery for all sanitizers that support it, the
+latter disables recovery for all sanitizers that support it.
+#+end_quote
+
+Let's try it!
+
+#+begin_src C :includes stdio.h unistd.h :flags -Wall -fsanitize=undefined -fno-sanitize-recover=all :results verbatim :exports both
+  dup2(STDOUT_FILENO, STDERR_FILENO);
+
+  union {
+    char a[10];
+    int i;
+  } u;
+  int *p = (int *) &(u.a[1]);
+  ,*p = 17;
+  printf("p %d\n", *p);
+#+end_src
+
+#+RESULTS:
+
+Unfortunately, there's a big problem. ~-fno-sanitize-recover=all~ causes
+a nonzero exit code to be returned on failure. =org-babel= does not like
+nonzero exit codes and fails to evaluate ~stdout~ when this happens. It
+does evaluate ~stderr~ when the exit code is nonzero, but only to a
+separate temporary buffer. At least this works outside of =org-babel=.
+
+See a (brief) discussion of this issue on the mailing list [[https://lists.gnu.org/archive/html/emacs-orgmode/2016-05/msg00204.html][here]]. There
+is an easy solution for ~sh~ scripts; just create a line at the end with
+~:~. Unfortunately since this is C, that's not really an option.
+
 
 ** TODO stm8-card: Part 1
 :PROPERTIES:
