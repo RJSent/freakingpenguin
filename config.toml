@@ -15,3 +15,6 @@ theme = "hugo-eureka"
 
 [Permalinks]
     post = "/:filename/"
+
+[markup.goldmark.renderer]
+  unsafe = true
