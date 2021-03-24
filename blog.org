@@ -89,10 +89,10 @@ the code will then have a runtime error. ~-Wall~ does not have an
 effect as this is not a compile-time issue, but a runtime one.
 
 Curiously, this isn't happening in org, only when I compile + run
-seperately. 17 is still printed, but the runtime error is not. I
-suspect that org isn't telling us ~stderr~, only ~stdout~.
+separately. 17 is still printed, but the runtime error is not. I
+suspect that org isn't printing ~stderr~, only ~stdout~.
 
-There are similar flags ~-fsanitize=address~ and ~-fsanitize=thread~
+There are similar flags, ~-fsanitize=address~ and ~-fsanitize=thread~,
 that can be useful for runtime error checking; look at the =gcc=
 manual for more information. I can combine these some/all options by
 doing ~-fsanitize=address,thread,undefined~.
@@ -127,6 +127,8 @@ results of the runtime error.
 :  f0 1f 6d f1 11 00 00  00 3f c2 89 fe 7f 00 00  00 b6 b9 73 9b 68 69 05  00 00 00 00 00 00 00 00  25
 :              ^ 
 : p 17
+
+And it works! We can now see the runtime error!
 
 When running this, I originally used ~stdout~ and ~stderr~ instead of
 ~STDOUT_FILENO~ and ~STDERR_FILENO~. ~stdout~ and ~stderr~ in
