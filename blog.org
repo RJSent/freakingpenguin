@@ -1,19 +1,36 @@
-#+AUTHOR: RIchard Sent
+#+AUTHOR: Richard Sent
 #+HUGO_BASE_DIR: ./
+#+HUGO_FRONT_MATTER_KEY_REPALCE: post>posts
 
+* Homepage
+:PROPERTIES:
+:EXPORT_HUGO_SECTION: /
+:EXPORT_FILE_NAME: _index
+:EXPORT_HUGO_MENU: :menu "main"
+:END:
+
+This is the home of my blog!
 
 * About
 :PROPERTIES:
 :EXPORT_FILE_NAME: about
 :EXPORT_HUGO_SECTION: /
-:EXPORT_HUGO_CUSTOM_FRONT_MATTER: :type about
 :END:
 
+,:EXPORT_HUGO_CUSTOM_FRONT_MATTER: :type about (Maybe not needed)
 
 * Posts
 :PROPERTIES:
 :EXPORT_HUGO_SECTION: posts
 :END:
+
+** Blog Homepage
+:PROPERTIES:
+:EXPORT_HUGO_MENU: :menu "main"
+:EXPORT_FILE_NAME: _index
+:END:
+
+Man, look at all my blog posts.
 
 ** Testing ox-hugo
 :PROPERTIES:
