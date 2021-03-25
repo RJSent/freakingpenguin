@@ -265,7 +265,8 @@ careful about memory alignment. We can't predict everything!)
 ~-fsanitize=undefined~ is a great flag to add when compiling; it
 catches more than just memory alignment! If you add the flag and
 forget about it, you will at least get a warning when undefined
-behavior occurs!
+behavior occurs! I'd much rather have a program that doesn't work but
+I know why then a program that doesn't work and I don't know why.
 
 ** TODO stm8-card: Part 1
 :PROPERTIES:
