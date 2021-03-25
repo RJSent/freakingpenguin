@@ -1,6 +1,6 @@
-baseURL = "http://example.org/"
+baseURL = "http://freakingpenguin.com/"
 languageCode = "en-us"
-title = "Freaking Penguin"
+title = "Richard Sent"
 theme = "hugo-flex"
 
 [Params]
