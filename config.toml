@@ -6,8 +6,8 @@ theme = "hugo-flex"
 [Params]
     mainSections = ["posts"]
     intro = true
-    headline = "My headline"
-    description = "My description"
+    headline = "I write some stuff."
+    description = "Another tech blog for the pile."
     gitlab = "https://gitlab.com/RJSent"
     email = "richard@freakingpenguin.com"
     opengraph = true
