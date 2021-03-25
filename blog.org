@@ -229,12 +229,12 @@ only printing the error message.
 #+RESULTS:
 
 Huh? Why wasn't the error message printed? Crashing the program is
-what we wanted, but not without the error message! Without it, all
-we're doing is making it harder to debug.
+what we wanted, but not without the error message! Without an error
+message, all we're doing is making our program harder to debug.
 
 Fortunately, this isn't our fault. The error message is actually being
 printed, and it is being printed to =stdout=. If we were running our
-program with a terminal, we'd see the error message we'd expect.
+program in a terminal, we'd see the error message we expect.
 
 Unfortunately, this is a limitation of =org-babel=.
 ~-fno-sanitize-recover=all~ causes a nonzero exit code to be returned
