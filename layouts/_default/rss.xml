@@ -8,6 +8,7 @@
 <!-- Changed to RelPermalink to fix https://support.mozilla.org/en-US/questions/1264318, Firefox issue 
      Also see https://stackoverflow.com/questions/39600571/ -->
 {{ printf `<?xml-stylesheet type="text/xsl" href=%q ?>` $base_xml.RelPermalink | safeHTML }}
+<!-- Fix isn't perfect, seems the CSS needs to be cached to function. Ideally would replace with file:// -->
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>{{ if eq .Title site.Title }}{{ site.Title }}{{ else }}{{ with .Title }}{{ . }} on {{ end }}{{ site.Title }}{{ end }}</title>
