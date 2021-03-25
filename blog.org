@@ -61,16 +61,47 @@ With some text underneath!
 
 [[file:static/static/another_one.jpg]]
 
-** Are bus errors still commonplace?                            :C:low_level:@programming:
+** Are bus errors still commonplace? Plus a bonus discussion on =org-babel=. :C:low_level:org:babel:@programming:
 :PROPERTIES:
 :EXPORT_FILE_NAME: bus_errors_1
 :EXPORT_DATE: 2021-03-24
 :END:
 
-Using the sample code in /Expert C Programming: Deep C Secrets/, pg.
+I was reading through Peter Linden's /Expert C Programming/ when I noticed
+an interesting example. On page 189, Peter talks about how one can
+cause a bus error. I've never had a bus error occur before. Maybe
+they're a solved problem?
+
+First, a bus error can occur when we access a variable at an address
+that's not valid for that variable. An address is not valid if the
+address is not evenly divisible by the length of the variable. In
+other words...
+
+#+begin_src C :exports code
+  /* sizeof (int) == 4 */
+  int p1 = *(int *) 5;
+  /* Causes a bus error, 5 % 4 != 0 */
+
+  int p2 = *(int *) 32;
+  /* No bus error, 32 % 4 == 0 */
+#+end_src
+
+Realistically these programs would immediately seg fault, as we
+don't have access to arbitrary memory addresses. (Unless we were
+working with embedded systems, perhaps...). To avoid this, we
+can use a union.
+
+The address of the union must be divisible by 4 (or ~sizeof int~),
+as it can store an integer. As long as ~sizeof int < sizeof char~
+(or ~sizeof int > 1~ as ~sizeof char == 1~), we can successfully
+get our bus error.
+
+*** Peter Linden's Code
+
+Using the sample code in /Expert C Programming/, pg.
 189, I am going to see if it causes a bus error.
 
-#+begin_src C :includes stdio.h :flags -Wall -fsanitize=undefined :exports both
+#+begin_src C :includes stdio.h :exports both
   union {
     char a[10];
     int i;
@@ -83,27 +114,50 @@ Using the sample code in /Expert C Programming: Deep C Secrets/, pg.
 #+RESULTS:
 : p 17
 
-From what I'm seeing online, x86 is very forgiving when it comes to
-misalignment errors. By adding the ~-fsanitize=undefined~ compile flag,
-the code will then have a runtime error. ~-Wall~ does not have an
-effect as this is not a compile-time issue, but a runtime one.
+Look at that! No problems. 
 
-Curiously, this isn't happening in org, only when I compile + run
-separately. 17 is still printed, but the runtime error is not. I
-suspect that org isn't printing ~stderr~, only ~stdout~.
+x86 is very forgiving when it comes to misalignment errors. This is
+great for us, but what if we ported this code over to a platform that
+is less friendly, like ARM?
+
+Ideally, we want to see if a bus error /can/ occur in our code, so
+that way we can avoid them during development, as opposed to fixing it
+later.
+
+Looking through the =gcc= manual, I found a compile flag that will be
+useful.
+
+#+begin_quote
+~fsanitize=undefined~
+
+Enable UndefinedBehaviorSanitizer, a fast undefined behavior detector.
+Various computations are instrumented to detect undefined behavior at
+runtime.
+#+end_quote
+
+By adding the ~-fsanitize=undefined~ compile flag, the code will print
+a runtime error whenever one occurs.
 
 There are similar flags, ~-fsanitize=address~ and ~-fsanitize=thread~,
 that can be useful for runtime error checking; look at the =gcc=
 manual for more information. I can combine these some/all options by
 doing ~-fsanitize=address,thread,undefined~.
 
-*** Fixing stderr in org-babel
+*** ~-fsanitize=undefined~
 
-Noting how the above source block is not outputing ~stderr~ in the
-~RESULTS:~ section, I'm going to attempt to close ~stderr~ as a file, then
-duplicate the ~stdout~ file descriptor to take ~stderr~'s place. This
-should (presumably) output ~stderr~ to ~stdout~, letting me see the
-results of the runtime error.
+There is one change that I need to make to the code. When a runtime
+error occurs, the results are printed to =stderr=. When we're looking
+at our code through a console, =stderr= and =stdout= might seem like
+the exact same thing.
+
+I am not running this code through a terminal. I'm using =org-babel=,
+a very powerful tool for literate programming. If our
+program runs successfully, =org-babel= will tell us the results.
+
+Unfortunately, these results don't include =stdout=. In order to see
+the runtime error occur, I need to close =stderr=, then change
+=stderr='s file descriptor to point to =stdout=. This is what the
+~dup2()~ function is doing.
 
 #+begin_src C :includes stdio.h unistd.h :flags -Wall -fsanitize=undefined :results verbatim :exports both
   dup2(STDOUT_FILENO, STDERR_FILENO);
@@ -114,32 +168,36 @@ results of the runtime error.
   } u;
   int *p = (int *) &(u.a[1]);
   ,*p = 17;
-  printf("p %d\n", *p);
+  printf("*p %d\n", *p);
+  printf("p %lld\n", p);
 #+end_src
 
 #+RESULTS:
-: /tmp/babel-6GBGFa/C-src-VBXfFC.c:17:4: runtime error: store to misaligned address 0x7ffe89c23dfd for type 'int', which requires 4 byte alignment
-: 0x7ffe89c23dfd: note: pointer points here
-:  f0 1f 6d f1 55 00 00  00 3f c2 89 fe 7f 00 00  00 b6 b9 73 9b 68 69 05  00 00 00 00 00 00 00 00  25
-:              ^ 
-: /tmp/babel-6GBGFa/C-src-VBXfFC.c:18:1: runtime error: load of misaligned address 0x7ffe89c23dfd for type 'int', which requires 4 byte alignment
-: 0x7ffe89c23dfd: note: pointer points here
-:  f0 1f 6d f1 11 00 00  00 3f c2 89 fe 7f 00 00  00 b6 b9 73 9b 68 69 05  00 00 00 00 00 00 00 00  25
-:              ^ 
-: p 17
+#+begin_example
+/tmp/babel-YOFYnN/C-src-93AiCJ.c:17:6: runtime error: store to misaligned address 0x7ffec796bddd for type 'int', which requires 4 byte alignment
+0x7ffec796bddd: note: pointer points here
+ 40 5a 14 84 55 00 00  e0 be 96 c7 fe 7f 00 00  00 f5 9a c3 4a 31 08 2e  00 00 00 00 00 00 00 00  25
+             ^ 
+/tmp/babel-YOFYnN/C-src-93AiCJ.c:18:3: runtime error: load of misaligned address 0x7ffec796bddd for type 'int', which requires 4 byte alignment
+0x7ffec796bddd: note: pointer points here
+ 40 5a 14 84 11 00 00  00 be 96 c7 fe 7f 00 00  00 f5 9a c3 4a 31 08 2e  00 00 00 00 00 00 00 00  25
+             ^ 
+,*p 17
+p 140732246965725
+#+end_example
 
-And it works! We can now see the runtime error!
-
-When running this, I originally used ~stdout~ and ~stderr~ instead of
-~STDOUT_FILENO~ and ~STDERR_FILENO~. ~stdout~ and ~stderr~ in
-=unistd.h= are pointers to ~FILE~, not integers like ~dup2~ expects.
-~dup2~ silently failed, leading me to think something weird was going
-on that wasn't.
-
-I would like to know how to not have any recovery whatsoever, and
-instead let the program immediately crash.
+And it works! We can now see the runtime error! We're trying to access
+an integer at address 140732246965725, which is not divisible by 4
+(AKA ~sizeof int~). Thus, a bus error occurs.
 
 *** Crash and burn programming
+
+Running code and printing out runtime errors is great. However, there's a
+saying in programming called "Fail early, fail often". What if we
+don't just want an error message printed? What if, instead, we want
+the program to immediately crash? After all, this is what would
+actually happen if we were on a CPU architecture that couldn't handle
+misaligned addresses.
 
 I looked through the =gcc= manual and saw the ~-fno-sanitize-recover=all~
 option. Supposedly, it does the following:
@@ -168,15 +226,43 @@ only printing the error message.
 
 #+RESULTS:
 
-Unfortunately, there's a big problem. ~-fno-sanitize-recover=all~ causes
+Huh? Why wasn't the error message printed? Crashing the program is
+what we wanted, but not without the error message! Without it, all
+we're doing is making it harder to debug.
+
+Fortunately, this isn't our fault. The error message is actually being
+printed, and it is being printed to =stdout=. If we were running our
+program with a terminal, we'd see the error message we'd expect.
+
+Unfortunately, this is a limitation of =org-babel=. ~-fno-sanitize-recover=all~ causes
 a nonzero exit code to be returned on failure. =org-babel= does not like
 nonzero exit codes and fails to evaluate ~stdout~ when this happens. It
 does evaluate ~stderr~ when the exit code is nonzero, but only to a
 separate temporary buffer. At least this works outside of =org-babel=.
 
-See a (brief) discussion of this issue on the mailing list [[https://lists.gnu.org/archive/html/emacs-orgmode/2016-05/msg00204.html][here]]. There
-is an easy solution for ~sh~ scripts; just create a line at the end with
-~:~. Unfortunately since this is C, that's not really an option.
+There's a (brief) discussion of this issue on the mailing list [[https://lists.gnu.org/archive/html/emacs-orgmode/2016-05/msg00204.html][here]].
+Given that this thread is 5 years old at this point, I'm not holding
+my breath for a fix.
+
+There is an easy solution for ~sh~ scripts; just create a line at the
+end with ~:~. Unfortunately since this is C, that's not really an
+option.
+
+*** Wrapping it up
+
+The entire point of this endeavour is to try to make sure our code is
+portable. When I write a program for one system, that program better
+work on as many other systems as possible.
+
+If any college students read this, professors don't like the "But it
+worked on my machine!" excuse. (On the other hand, it takes one *mean*
+professor to test with a different architecture in order to if you were
+careful about memory alignment. We can't predict everything!)
+
+~-fsanitize=undefined~ is a great flag to add when compiling; it
+catches more than just memory alignment! If you add the flag and
+forget about it, you will at least get a warning when undefined
+behavior occurs!
 
 ** TODO stm8-card: Part 1
 :PROPERTIES:
