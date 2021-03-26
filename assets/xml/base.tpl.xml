@@ -43,7 +43,9 @@
           <footer class="Footer">
             <div class="u-wrapper">
               <div class="u-padding">
-                {{ safeHTML . }}
+                <!-- Uncomment if you want footer to be printed... -->
+		<!-- {{ safeHTML . }} -->
+		<a href={{ site.Params.gitlab }}>Gitlab</a>
               </div>
             </div>
           </footer>
