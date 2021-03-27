@@ -8,6 +8,8 @@
 ;; (defvar straight-fix-org)
 (defvar straight-vc-git-default-clone-depth 1)
 (defvar publish--straight-repos-dir)
+(defvar org-confirm-babel-evaluate)
+(defvar ob-mermaid-cli-path)
 
 (setq gc-cons-threshold 83886080 ; 80MiB
       straight-base-dir (expand-file-name "../.." (or load-file-name buffer-file-name))
@@ -26,6 +28,7 @@
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 
+(message "Downloading dependencies...")
 ;; ox-hugo clones org as dependency, redundant (also org != org-mode apparently??)
 ;; (straight-use-package
 ;;  '(org-mode :type git
@@ -37,6 +40,14 @@
 	   :host github
 	   :repo "kaushalmodi/ox-hugo"
 	   :nonrecursive t))
+(straight-use-package
+ '(ob-mermaid :type git
+	      :host github
+	      :repo "arnm/ob-mermaid"
+	      :nonrecursive t))
+;; TODO: Automate install of mermaid-cli, npm install
+;; @mermaid-js/mermaid-cli, which requires install of npm
+(setq ob-mermaid-cli-path "~/.node_modules/.bin/mmdc")
 
 (with-current-buffer (find-file-noselect (expand-file-name "blog.org" "."))
   (org-next-visible-heading 1)
@@ -44,6 +55,15 @@
   (when (equal (org-entry-get (point) "CUSTOM_ID") "toc")
     (let ((inhibit-message t))
       (org-cut-subtree)))
+
+  (message "Evaluating code blocks...")
+  ;; ;; TODO: Change to only nonconfirm with certain languages
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((mermaid . t)))
+
+  (setq org-confirm-babel-evaluate nil)
+  (org-babel-execute-buffer)
 
   (message "Publishing...")
   (org-hugo-export-wim-to-md t))
