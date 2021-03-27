@@ -60,6 +60,7 @@
   ;; Not needed since I figure out the issue, see comment above
   ;; org-babel-do-load-languages. No harm to keep it though. Security,
   ;; right? (Don't ask "security from what?")
+  ;; Also keeping this would allow for more complex conditional evaluation later if I ever have the need.
   (message "Prepping to eval code blocks...")
   (defadvice org-babel-execute-src-block (around conditional-eval nil activate)
     "Execute src-block if the block's language is in richard-babel-languages-to-eval"
