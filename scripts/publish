@@ -10,6 +10,7 @@
 (defvar publish--straight-repos-dir)
 (defvar org-confirm-babel-evaluate)
 (defvar ob-mermaid-cli-path)
+(defvar richard-babel-languages-to-eval (list 'mermaid))
 
 (setq gc-cons-threshold 83886080 ; 80MiB
       straight-base-dir (expand-file-name "../.." (or load-file-name buffer-file-name))
@@ -57,13 +58,26 @@
       (org-cut-subtree)))
 
   (message "Evaluating code blocks...")
-  ;; ;; TODO: Change to only nonconfirm with certain languages
+  ;; Mermaid seems to generate graphs twice, once on
+  ;; (org-babel-execute-buffer) and once on export.
+  ;; Created band-aid fix by removing (org-babel-execute-buffer). Not
+  ;; sure of cause.
+  (defadvice org-babel-execute-src-block (around conditional-eval nil activate)
+    "Execute src-block if the block's language is in richard-babel-languages-to-eval"
+    (let ((language (org-element-property :language (org-element-at-point))))
+      (if (member (intern language) richard-babel-languages-to-eval)
+	  (progn (message language)
+		 ad-do-it))))
+
+  ;; TODO: Use richard-babel-languages-to-eval
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((mermaid . t)))
 
   (setq org-confirm-babel-evaluate nil)
-  (org-babel-execute-buffer)
+  ;; For some reason advice causes the execute buffer to not be
+  ;; needed as they are then properly evaled on export by hugo.
+  ;; (org-babel-execute-buffer)
 
   (message "Publishing...")
   (org-hugo-export-wim-to-md t))
