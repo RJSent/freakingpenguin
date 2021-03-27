@@ -19,6 +19,76 @@ This is the home of my blog!
 :EXPORT_HUGO_SECTION: /
 :END:
 
+Hi there! I am an undergraduate student double majoring in Computer Engineering
+and Physics at Cleveland State University.
+
+Outside of taking super heavy course loads, I enjoy spending my free
+time tinkering with technology. Often this means low-level
+development, such as with ST microcontrollers.
+
+I've done undergraduate research with the physics department at CSU,
+even managing to combine my two degrees into a useful project! You can see
+the source code for that project [[https:gitlab.com/rjsent/usra_video][here]].
+
+I have experience with the following programming languages and tools:
+
+- C
+
+- Ruby
+
+- Java
+
+- VHDL
+
+- Git
+
+- Linux [[https://www.gnu.org/gnu/incorrect-quotation.en.html][(I'd just like to interject for a moment...)]]
+
+- Emacs / Emacs Lisp
+
+- Nginx (This website is hosted on a virtual private server using Nginx!)
+
+- Hugo
+  
+Some general topics I find interesting are:
+
+- Embedded development
+
+- Hardware design and FPGAs
+
+- Security
+
+- Quantum Computing
+
+- Systems Programming
+
+
+Aside from that, I work to ensure that I'm not just learning the
+syntactical grammar of a programming language, but also the underlying
+concepts and good development practices. /Practical Object Oriented
+Design/ by Sandi Metz provides an excellent overview from an
+object-oriented standpoint, and I feel many of the core principles
+apply to procedural languages like C. (Maybe I'll write a post on this
+once I finish /C Interfaces and Implementions/ by Hanson.)
+
+** Personal
+
+Outside of programming and physics, I enjoy the following:
+
+- Camping and hiking
+
+- Reading, both for education and recreation
+
+- Traveling
+
+- Cats
+
+- Learning about new cultures
+
+* TODO Projects
+
+- List of projects, ala https://www.thomasvanderberg.nl/projects/
+
 * Posts
 :PROPERTIES:
 :EXPORT_HUGO_SECTION: posts
