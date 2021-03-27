@@ -48,7 +48,9 @@
 	      :nonrecursive t))
 ;; TODO: Automate install of mermaid-cli, npm install
 ;; @mermaid-js/mermaid-cli, which requires install of npm
-(setq ob-mermaid-cli-path "~/.node_modules/.bin/mmdc")
+;; Also find solution to potentially different locations of
+;; node_modules
+(setq ob-mermaid-cli-path "~/node_modules/.bin/mmdc")
 
 (with-current-buffer (find-file-noselect (expand-file-name "blog.org" "."))
   (org-next-visible-heading 1)
