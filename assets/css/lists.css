@@ -1,7 +1,7 @@
-article ul li {
+article ul li :not(footer) {
     line-height: 0.75rem;
 }
 
-article ol li {
+article ol li :not(footer) {
     line-height: 0.75rem;
 }
