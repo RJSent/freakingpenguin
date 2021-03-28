@@ -15,35 +15,32 @@ theme = "hugo-flex"
     color = "#800020"
     footer = true
     math = true
-	
+    css = [ "css/lists.css", ]
+
 [Permalinks]
     posts = "posts/:filename/"
 
 [markup.goldmark.renderer]
-  unsafe = true
+    unsafe = true
 
 [[menu.nav]]
-name = "About"
-url = "about/"
-weight = 1
-
+    name = "About"
+    url = "about/"
+    weight = 1
 # Overwrite setting in themes/hugo-flex/config.yaml, post -> posts
 [[menu.nav]]
-name = "Posts"
-url = "posts/"
-weight = 2
-
+    name = "Posts"
+    url = "posts/"
+    weight = 2
 [[menu.nav]]
-name = "Tags"
-url = "tags/"
-weight = 3
-
+    name = "Tags"
+    url = "tags/"
+    weight = 3
 [[menu.nav]]
-name = "Categories"
-url = "categories/"
-weight = 4
-
+    name = "Categories"
+    url = "categories/"
+    weight = 4
 [[menu.nav]]
-name = "RSS"
-url = "index.xml"
-weight = 5
+    name = "RSS"
+    url = "index.xml"
+    weight = 5	
