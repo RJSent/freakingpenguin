@@ -45,7 +45,10 @@
               <div class="u-padding">
                 <!-- Uncomment if you want footer to be printed... -->
 		<!-- {{ safeHTML . }} -->
-		<a href={{ site.Params.gitlab }}>Gitlab</a>
+		<!-- For unknown reasons xml href clobbers the first
+		     and last letter of the link -->
+		<!-- Need a more permanent fix. -->
+		<a href={{ print "h" site.Params.gitlab "t" | safeHTML }}>Gitlab</a>
               </div>
             </div>
           </footer>
