@@ -48,7 +48,7 @@
 		<!-- For unknown reasons xml href clobbers the first
 		     and last letter of the link -->
 		<!-- Need a more permanent fix. -->
-		<a href={{ print "h" site.Params.gitlab "t" | safeHTML }}>Gitlab</a>
+		<a href={{ print (substr site.Params.gitlab 0 1) site.Params.gitlab (substr site.Params.gitlab -1 1) }}>Gitlab</a>
               </div>
             </div>
           </footer>
