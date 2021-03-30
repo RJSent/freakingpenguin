@@ -42,11 +42,15 @@ I have experience with the following programming languages and tools:
 
 - Git
 
-- Linux [[https://www.gnu.org/gnu/incorrect-quotation.en.html][(I'd just like to interject for a moment...)]]
+- Linux
+
+  - [[https://www.gnu.org/gnu/incorrect-quotation.en.html][I'd just like to interject for a moment...]]
 
 - Emacs / Emacs Lisp
 
-- Nginx (This website is hosted on a virtual private server using Nginx!)
+- Nginx
+
+  - This website is hosted on a virtual private server using Nginx!
 
 - Hugo
   
@@ -62,14 +66,18 @@ Some general topics I find interesting are:
 
 - Systems Programming
 
+- Open Source Software/Hardware
+
+  - Here's hoping the PinePhone keeps succeeding!
+
 
 Aside from that, I work to ensure that I'm not just learning the
 syntactical grammar of a programming language, but also the underlying
 concepts and good development practices. /Practical Object Oriented
 Design/ by Sandi Metz provides an excellent overview from an
-object-oriented standpoint, and I feel many of the core principles
-apply to procedural languages like C. (Maybe I'll write a post on this
-once I finish /C Interfaces and Implementions/ by Hanson.)
+object-oriented standpoint, and I feel many of the core principles can
+be applied to procedural languages like C. Maybe I'll write a post on this
+once I finish /C Interfaces and Implementions/ by Hanson.
 
 ** Personal
 
