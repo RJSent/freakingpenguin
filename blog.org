@@ -79,6 +79,13 @@ object-oriented standpoint, and I feel many of the core principles can
 be applied to procedural languages like C. Maybe I'll write a post on this
 once I finish /C Interfaces and Implementions/ by Hanson.
 
+*** COMMENT Gitlab link issue
+
+See https://github.com/kaushalmodi/ox-hugo/issues/236 for a more
+detailed discussion on the issue and potential fix. I left a comment
+since Hugo now uses Goldmark instead of Blackfriday by default, so the
+Blackfriday bug should not be relevent.
+
 ** Personal
 
 Outside of programming and physics, I enjoy the following:
