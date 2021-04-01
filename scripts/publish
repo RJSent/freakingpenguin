@@ -90,8 +90,7 @@
   ;; Remove hugo's URL sanitization as Goldmark is now used instead of
   ;; Blackfriday, not needed. This behavior leads to 404 errors on
   ;; certain websites and browsers, see
-  ;; https://github.com/kaushalmodi/ox-hugo/issues/236
-  ;; and a pull request
+  ;; https://github.com/kaushalmodi/ox-hugo/issues/236 and
   ;; https://github.com/kaushalmodi/ox-hugo/pull/403
   (defun url-sanitize-overwrite (orig-fun &rest args)
     ;; Careful, args is list of arguments, not the argument itself
