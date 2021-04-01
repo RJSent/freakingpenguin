@@ -95,7 +95,7 @@
   ;; https://github.com/kaushalmodi/ox-hugo/pull/403
   (defun url-sanitize-overwrite (orig-fun &rest args)
     ;; Careful, args is list of arguments, not the argument itself
-    (replace-regexp-in-string "_" "_" (nth 0 args)))
+    (identity (nth 0 args)))
   (advice-add 'org-blackfriday--url-sanitize :around #'url-sanitize-overwrite)
   
   (org-hugo-export-wim-to-md t))
