@@ -429,12 +429,12 @@ small demonstration.
 Now, Taylor series can be useful, but they have significant
 limitations. First, we see that the Taylor series does a poor job
 modeling periodic functions. Even though \( \sin x \) repeats, our
-Taylor series does not. At large \(x\) values, the Taylor series does
-a poor job of approximating our function.
+Taylor series does not. At large \(x\) values, this Taylor series is
+completely wrong!
 
 Second, a Taylor series relies on the function being continuous (no
 holes or jumps). In addition to the function being continous, it's
-derivatives must be as well. Consider the following graph.
+derivatives must be as well. Let's consider the following graph.
 
 #+begin_src gnuplot :file static/static/gnuplot-discontinuous-derivative.png :exports results
   set title "Discontinuous Derivative"
@@ -458,13 +458,13 @@ derivatives must be as well. Consider the following graph.
 #+RESULTS:
 [[file:static/static/gnuplot-discontinuous-derivative.png]]
 
-Even though \( f(x) \) is continuous, its derivative \( f'(x) \), is
+Even though \( f(x) \) is continuous, its derivative \( f'(x) \) is
 not. As such, a Taylor series cannot be used to approximate this
 function. This issue would come up even if \( f''''''''''(x) \) was
 discontinuous. (Keep in mind that discontinuous is not the same thing
 as 0! We can model \( f(x) = x \) as a Taylor series, as its
 higher order derivatives are continuous. They just also happen to be
-zero. Also, \( f(x) = x \) is its own Taylor series.)
+0. Also, \( f(x) = x \) is its own Taylor series.)
 
 So, to summarize, Taylor series have the following issues
 
@@ -477,7 +477,7 @@ So, to summarize, Taylor series have the following issues
 Fortunately, the Fourier series provides answers to both of these
 problems! (At least for most functions. Some functions, like a
 function that is discontinuous everywhere, exist solely for the
-purpose of making us have to qualify perfectly valid assertions.)
+purpose of making us sad.)
 
 **** What we're all here for, Fourier series
 
@@ -566,14 +566,18 @@ answer is within 1% of the actual value.)
 
 ~result~ and ~abserr~ are used by the function to store the results
 and estimated absolute error, respectively. The number of iterations
-it took to calculate the result is stored in ~neval~. 
+it took to calculate the result is stored in ~neval~.
+
+It is possible for the integration to fail. This might happen if we
+set the error tolerances too tight. Since the function we're
+integrating is so simple, I don't think that's a likely concern.
 
 ***** ~gsl_integration_qng()~ in use
 
 To compile this program, you will need to tell the compiler what
-external libraries to use. You can do with with the ~lgsl~ compile
-flag, e.g. ~gcc main.c -lgsl~. Because =GSL= depends on another
-library, =CBLAS=, you will also need the ~lcblas~ flag. If =CBLAS=
+external libraries to use. You can do with with the ~-lgsl~ compile
+flag, e.g. ~gcc main.c --lgsl~. Because =GSL= depends on another
+library, =CBLAS=, you will also need the ~-lcblas~ flag. If =CBLAS=
 isn't available, you can use a version of =CBLAS= provided by =GSL=
 with ~-lgslcblas~. (Don't forget to install =GSL=!) Since I'm using
 some math function, I'm also going to include the math library with
@@ -582,7 +586,7 @@ some math function, I'm also going to include the math library with
 In the end, our command will look like ~gcc main.c -lgsl -lcblas -lm~,
 which will compile =main.c= and create an output file =a.out=.
 (Actually I'm using =org-babel= so I don't have to deal with this, but
-I'm assuming any readers here are not.)
+I'm assuming most readers here are not.)
 
 Alright! Time to integrate! I need to preface the =gsl_integration.h=
 header with =gsl/= as the headers are installed in a =gsl=
@@ -590,31 +594,32 @@ subdirectory. (If you installed this through your systems package
 manager, you can probably find this file in =/usr/include/gsl/=.)
 
 #+begin_src C :libs -lgsl -lcblas -lm :eval no-export :exports both
-  #include <stdio.h>
-  #include <gsl/gsl_integration.h>
-  #include <math.h>
+   #include <stdio.h>
+   #include <gsl/gsl_integration.h>
+   #include <math.h>
 
-  /* This is where we define the function */
-  double f(double x, void *params) {
-    return x;
-  }
+   /* This is where we define the function */
+   double f(double x, void *params) {
+     return x;
+   }
 
-  int main() {
-    double result, error;
-    double low = 0, high = 8;
-    gsl_function F = {.function = &f};
-    double err_abs = 0, err_rel = 1;
-    size_t num_evals = 1000000;
+   int main() {
+     double result, error;
+     double low = 0, high = 8;
+     gsl_function F = {.function = &f};
+     double err_abs = 0, err_rel = 1;
+     size_t num_evals;
 
-    gsl_integration_qng(&F, low, high, err_abs, err_rel, &result, &error, &num_evals);
-    printf("result error\n");
-    printf("%f %f\n", result, error);
-  }
+     gsl_integration_qng(&F, low, high, err_abs, err_rel,
+			 &result, &error, &num_evals);
+     printf("result error num_evals\n");
+     printf("%f %f %ld\n", result, error, num_evals);
+   }
 #+end_src
 
 #+RESULTS:
-| result | error |
-|   32.0 |   0.0 |
+| result | error | num_evals |
+|   32.0 |   0.0 |        21 |
 
 There we go! =GSL= was able to successfully integrate \( \int_{0}^{8}
 x dx \).
