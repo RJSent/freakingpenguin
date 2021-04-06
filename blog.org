@@ -622,7 +622,7 @@ manager, you can probably find this file in =/usr/include/gsl/=.)
      gsl_integration_qng(&F, low, high, err_abs, err_rel,
 			 &result, &error, &num_evals);
      printf("result error num_evals\n");
-     printf("%f %f %ld\n", result, error, num_evals);
+     printf("%f %f %zu\n", result, error, num_evals);
    }
 #+end_src
 
