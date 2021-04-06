@@ -419,7 +419,7 @@ small demonstration.
 
   # plot sin(x) lw 3 title "sin(x)"
   do for [i=0:9] {
-      plot sum [j=0:i] taylor(x, j) lw 2 title sprintf("%d term%s", i+1, i+1 > 1 ? "s" : "")
+      plot sum [j=0:i] taylor(x, j) lw 2 title sprintf("%d term%s", i+1, i+1 > 1 ? "s" : " ")
   } 
 #+end_src
 
