@@ -149,7 +149,9 @@ With some text underneath!
 
 [[file:static/static/another_one.jpg]]
 
-** Are bus errors still commonplace? Plus a bonus discussion on =org-babel=. :C:low_level:org:babel:@programming:
+** Musings :@musings:
+
+*** Are bus errors still commonplace? Plus a bonus discussion on =org-babel=. :C:low_level:org:babel:
 :PROPERTIES:
 :EXPORT_FILE_NAME: bus_errors_1
 :EXPORT_DATE: 2021-03-24
@@ -179,7 +181,7 @@ don't have access to arbitrary memory addresses. (Unless we were
 working with embedded systems, perhaps...). To avoid this, we
 can use a union.
 
-*** Peter Linden's Code
+**** Peter Linden's Code
 
 Using the sample code in /Expert C Programming/, pg.
 189, I am going to see if it causes a bus error.
@@ -233,7 +235,7 @@ that can be useful for runtime error checking; look at the =gcc=
 manual for more information. I can combine options with commas, i.e.
 ~-fsanitize=address,thread,undefined~.
 
-*** ~-fsanitize=undefined~
+**** ~-fsanitize=undefined~
 
 There is one change that I need to make to the code. When a runtime
 error occurs, the results are printed to =stderr=. When we're looking
@@ -280,7 +282,7 @@ And it works! We can now see the runtime error! We're trying to access
 an integer at address 140732246965725, which is not divisible by 4
 (AKA ~sizeof int~). Thus, a bus error occurs.
 
-*** Crash and burn programming
+**** Crash and burn programming
 
 Running code and printing out runtime errors is great. However, there's a
 saying in programming called "Fail early, fail often". What if we
@@ -339,7 +341,7 @@ There is an easy solution for ~sh~ scripts; just create a line at the
 end with ~:~. Unfortunately since this is C, that's not really an
 option.
 
-*** Wrapping it up
+**** Wrapping it up
 
 The entire point of this endeavour is to try to make sure our code is
 portable. When I write a program for one system, that program better
@@ -356,9 +358,9 @@ forget about it, you will at least get a warning when undefined
 behavior occurs! I'd much rather have a program that doesn't work but
 I know why then a program that doesn't work and I don't know why.
 
-** TODO Calculating a Fourier series in C, visualising one with GNUPlot :C:@programming:@math:gnuplot:
+** TODO Calculating a Fourier series in C, visualising one with GNUPlot :@fourier:
 
-*** Fourier Part 1: What is a Fourier series?
+*** Fourier Part 1: What is a Fourier series? :C:math:gnuplot:GSL:
 :PROPERTIES:
 :EXPORT_FILE_NAME: fourier_series_1
 :EXPORT_DATE: 2021-04-06
@@ -636,7 +638,7 @@ series of a discontinuous, periodic function. We'll see if we can
 naively get away with using the simple ~gsl_integration_qng()~
 function, or if we need to find a more complicated, but more powerful, alternative.
 
-** TODO stm8-card
+** TODO stm8-card						  :@stm8_card:
 
 *** COMMENT Outline
 
