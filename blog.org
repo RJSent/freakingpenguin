@@ -355,7 +355,7 @@ forget about it, you will at least get a warning when undefined
 behavior occurs! I'd much rather have a program that doesn't work but
 I know why then a program that doesn't work and I don't know why.
 
-** Calculating a Fourier series in C, visualising one with GNUPlot :C:@programming:@math:gnuplot:
+** TODO Calculating a Fourier series in C, visualising one with GNUPlot :C:@programming:@math:gnuplot:
 
 *** Fourier Part 1: What is a Fourier series?
 :PROPERTIES:
