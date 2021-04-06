@@ -517,8 +517,8 @@ we need a new formula for \( a_0 \). This formula will look like
 
 Fortunately there is no special case for \( b_0 \). This is because
 when \( n = 0 \), we will get \( \sin(0) \) in our original \( a_n \)
-formula. Because \( sin(0) = 0 \), we would find that \( a_n = 0 \)
-all the time, which is not the case.
+formula. Because \( sin(0) = 0 \), we would find that \( a_0 = 0 \)
+for any function, which is not the case.
 
 That is all the theory that we need to calculate the Fourier series!
 As long as we can find a library that can perform integration for us,
