@@ -464,7 +464,7 @@ function. This issue would come up even if \( f''''''''''(x) \) was
 discontinuous. (Keep in mind that discontinuous is not the same thing
 as 0! We can model \( f(x) = x \) as a Taylor series, as its
 higher order derivatives are continuous. They just also happen to be
-0. Also, \( f(x) = x \) is its own Taylor series.)
+0. Also, \( f(x) = x \) is its own Taylor series.)
 
 So, to summarize, Taylor series have the following issues
 
