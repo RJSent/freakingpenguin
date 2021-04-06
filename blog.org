@@ -479,6 +479,13 @@ problems! (At least for most functions. Some functions, like a
 function that is discontinuous everywhere, exist solely for the
 purpose of making us sad.)
 
+***** COMMENT Org misidentifying list
+
+When a number appears at the start of a line followed by a period and
+1. space like this, org mode will treat that as a list. This isn't a
+perfect solution, but we can insert a non breaking space with ~C-q 240
+ret~ after the period. Credit to Andrew Swann [[https://emacs.stackexchange.com/a/10422][here]].
+
 **** What we're all here for, Fourier series
 
 I'll be sticking to the basics of Fourier series for now. Let's assume
