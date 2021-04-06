@@ -1,6 +1,5 @@
 #+AUTHOR: Richard Sent
 #+HUGO_BASE_DIR: ./
-#+HUGO_FRONT_MATTER_KEY_REPALCE: post>posts
 #+PROPERTY: header-args:mermaid :eval yes
 #+PROPERTY: header-args:gnuplot :eval yes
 #+PROPERTY: header-args         :eval no-export
