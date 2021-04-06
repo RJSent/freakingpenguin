@@ -15,7 +15,8 @@ theme = "hugo-flex"
     color = "#800020"
     footer = true
     math = true
-    css = [ "css/lists.css", "css/code_blocks.css", ]
+    css = [ "css/lists.css", "css/code_blocks.css", "css/figures.css", ]
+    width = "47rem"
 
 [permalinks]
     posts = "posts/:filename/"
