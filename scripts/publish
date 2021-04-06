@@ -10,7 +10,7 @@
 (defvar publish--straight-repos-dir)
 (defvar org-confirm-babel-evaluate)
 (defvar ob-mermaid-cli-path)
-(defvar richard-babel-languages-to-eval (list 'mermaid))
+(defvar richard-babel-languages-to-eval (list 'mermaid 'gnuplot))
 
 (setq gc-cons-threshold 83886080 ; 80MiB
       straight-base-dir (expand-file-name "../.." (or load-file-name buffer-file-name))
@@ -46,6 +46,7 @@
 	      :host github
 	      :repo "arnm/ob-mermaid"
 	      :nonrecursive t))
+(straight-use-package 'gnuplot)
 ;; TODO: Automate install of mermaid-cli, npm install
 ;; @mermaid-js/mermaid-cli, which requires install of npm
 ;; Also find solution to potentially different locations of
@@ -78,7 +79,8 @@
   ;; blocks.
   (org-babel-do-load-languages
    'org-babel-load-languages
-   '((mermaid . t)))
+   '((mermaid . t)
+     (gnuplot . t)))
   ;; TODO: For security replace nil with function which "takes two
   ;; arguments the language of the code block and the body of the code
   ;; block. Such a function should then return a non-nil value if the
