@@ -99,10 +99,17 @@
     (identity (nth 0 args)))
   (advice-add 'org-blackfriday--url-sanitize :around #'url-sanitize-overwrite)
   
-  (org-hugo-export-wim-to-md t)
-  ;; FIXME: temporary workaround to gnuplot not finishing graphing
-  ;; before script exits. Would be much better if I can poll the
-  ;; gnuplot subprocess and see if it is still plotting or not. Also,
-  ;; are there multiple subprocesses for GNUPlot when exporting? I
-  ;; suspect so.
-  (sleep-for 50))
+  (org-hugo-export-wim-to-md t))
+
+;; Wait until gnuplot finishes creating graphs before returning
+(with-current-buffer (get-buffer "*gnuplot*")
+  ;; send eof, read by gnuplot when it finishes plotting last graph
+  ;; and causes gnuplot subprocess to exit, breaking loop.
+  ;; eof is not buffered. Lost if it's not read when it's sent.
+  (message "Waiting on GNUPlot to finish plotting")
+  (let ((i 0) (timeout 60))
+    (while (get-process "gnuplot")
+      (comint-send-eof)
+      (set 'i (1+ i))
+      (when (> i timeout) (error "Failed to generate graphs"))
+      (sleep-for 1))))
