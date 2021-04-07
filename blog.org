@@ -401,10 +401,17 @@ small demonstration.
 #+RESULTS:
 [[file:static/static/gnuplot-taylor-example.png]]
 
+In the graph below, I tried demonstrating how the Taylor series can
+"home in" on a function. Since we can't add part of a term in a Taylor
+series, I tried to demonstrate this effect by multiplying the term by
+a value. For example, when you see 1.1 terms, that means the first
+term + 0.1 * the second term. For \( \sin x \), that's \( x - 0.1 *
+\frac{x^3}{3!} \)
+
 #+begin_src gnuplot :file static/static/gnuplot-taylor-animated-example.gif :exports results
   # delay <time> has time in units of 1/100 seconds
   # default delay between frames. Each plot generates a frame
-  set terminal gif animate delay 75 loop 0
+  set terminal gif animate delay 3 loop 0
   set title "Taylor Series Animation"
   set xtics nomirror
   set yrange [-3:3]
@@ -414,13 +421,23 @@ small demonstration.
   set xzeroaxis lt 1 lc "black" lw 1
   set yzeroaxis lt 1 lc "black" lw 1
   set size ratio 0.7
+  set samples 400
 
   fac(x) = (int(x)==0) ? 1.0 : int(x) * fac(int(x)-1.0)
   taylor(x, n) = (-1)**n * (x**(2*n+1)) / fac(2*n+1)
 
   # plot sin(x) lw 3 title "sin(x)"
   do for [i=0:9] {
-      plot sum [j=0:i] taylor(x, j) lw 2 title sprintf("%d term%s", i+1, i+1 > 1 ? "s" : " ")
+      inner_loops = 60
+      do for [j=0:inner_loops] {
+	  plot (1.0*j/inner_loops) * taylor(x, i) + sum [n=0:i-1] taylor(x, n)\
+	       lw 2 title sprintf("%.1f term%s", i+1.0*j/inner_loops, i+1.0*j/inner_loops > 0 ? "s" : " ")
+      }
+      # Only way I can think of "pausing" the animation.
+      do for [j=0:inner_loops/3] {
+	  plot (1.0) * taylor(x, i) + sum [n=0:i-1] taylor(x, n)\
+	       lw 2 title sprintf("%.1f term%s", i+1.0, i+1.0 > 1 ? "s" : " ")
+      }
   } 
 #+end_src
 
