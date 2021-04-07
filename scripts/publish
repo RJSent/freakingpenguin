@@ -102,6 +102,7 @@
   (org-hugo-export-wim-to-md t))
 
 ;; Wait until gnuplot finishes creating graphs before returning
+;; TODO: timeout at command line option. Need to get from Make to elisp
 (with-current-buffer (get-buffer "*gnuplot*")
   ;; send eof, read by gnuplot when it finishes plotting last graph
   ;; and causes gnuplot subprocess to exit, breaking loop.
