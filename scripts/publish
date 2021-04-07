@@ -99,4 +99,10 @@
     (identity (nth 0 args)))
   (advice-add 'org-blackfriday--url-sanitize :around #'url-sanitize-overwrite)
   
-  (org-hugo-export-wim-to-md t))
+  (org-hugo-export-wim-to-md t)
+  ;; FIXME: temporary workaround to gnuplot not finishing graphing
+  ;; before script exits. Would be much better if I can poll the
+  ;; gnuplot subprocess and see if it is still plotting or not. Also,
+  ;; are there multiple subprocesses for GNUPlot when exporting? I
+  ;; suspect so.
+  (sleep-for 50))
