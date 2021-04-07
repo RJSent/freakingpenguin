@@ -21,6 +21,11 @@ theme = "hugo-flex"
 [permalinks]
     posts = "posts/:filename/"
 
+# Disabled due to messing up prime notation in KaTeX
+# See https://github.com/KaTeX/KaTeX/issues/967
+[markup.goldmark.extensions]
+    typographer = false
+
 [markup.goldmark.renderer]
     unsafe = true
 
