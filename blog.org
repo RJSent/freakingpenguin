@@ -166,6 +166,8 @@ org-babel to display the results properly.
 
 #+hugo: more
 
+**** What is a bus error?
+
 I was reading through Peter Linden's /Expert C Programming/ when I noticed
 an interesting example. On page 189, Peter talks about how one can
 cause a bus error. I've never had a bus error occur before. Maybe
