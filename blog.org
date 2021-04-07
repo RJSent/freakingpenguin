@@ -372,7 +372,7 @@ you've taken calculus before, you may have heard of a similar concept,
 Taylor series. With Taylor series, we can approximate any function as
 a sum of polynomials. For example, we can write \( \sin x \) as
 
-\[ sin(x) = x - \frac{x^3}{3!} + \frac{x^5}{5!} - \frac{x^7}{7!} +
+\[ \sin x = x - \frac{x^3}{3!} + \frac{x^5}{5!} - \frac{x^7}{7!} +
 \cdots \]
 
 If we were to graph this, ([[https://www.desmos.com][try it!]]), we see that as more terms are
@@ -499,9 +499,9 @@ While this isn't the only option, we can write the Fourier series as
 
 In this case, we can find \( a_n \) and \( b_n \) with the formulas
 
-\[ a_n = \frac{1}{l} \int_{0}^{2l} f(x) cos(\frac{n \pi x }{l}) dx \]
+\[ a_n = \frac{1}{l} \int_{0}^{2l} f(x) \cos(\frac{n \pi x }{l}) dx \]
 
-\[ b_n = \frac{1}{l} \int_{0}^{2l} f(x) sin(\frac{n \pi x }{l}) dx \]
+\[ b_n = \frac{1}{l} \int_{0}^{2l} f(x) \sin(\frac{n \pi x }{l}) dx \]
 
 I won't go into detail as to where these formulas come from. (That is
 left as an exercise for the reader. Hah!) However, I will point out
@@ -515,8 +515,8 @@ we need a new formula for \( a_0 \). This formula will look like
 \[ a_o = \frac{1}{l} \int_{0}^{2l} f(x) dx \]
 
 Fortunately there is no special case for \( b_0 \). This is because
-when \( n = 0 \), we will get \( \sin(0) \) in our original \( a_n \)
-formula. Because \( sin(0) = 0 \), we would find that \( a_0 = 0 \)
+when \( n = 0 \), we will get \( \sin 0 \) in our original \( a_n \)
+formula. Because \( \sin 0 = 0 \), we would find that \( a_0 = 0 \)
 for any function, which is not the case.
 
 That is all the theory that we need to calculate the Fourier series!
@@ -572,7 +572,7 @@ we know we are no more than 0.1 away from it. ~epsrel~ is similar, but
 percentage based instead of absolute. (e.g. ~epsrel~ = 0.01 means our
 answer is within 1% of the actual value.)
 
-~result~ and ~abserr~ are used by the function to store the results
+~result~ and ~abserr~ are used by the function to store the result
 and estimated absolute error, respectively. The number of iterations
 it took to calculate the result is stored in ~neval~.
 
@@ -584,7 +584,7 @@ integrating is so simple, I don't think that's a likely concern.
 
 To compile this program, you will need to tell the compiler what
 external libraries to use. You can do with with the ~-lgsl~ compile
-flag, e.g. ~gcc main.c --lgsl~. Because =GSL= depends on another
+flag, e.g. ~gcc main.c -lgsl~. Because =GSL= depends on another
 library, =CBLAS=, you will also need the ~-lcblas~ flag. If =CBLAS=
 isn't available, you can use a version of =CBLAS= provided by =GSL=
 with ~-lgslcblas~. (Don't forget to install =GSL=!) Since I'm using
