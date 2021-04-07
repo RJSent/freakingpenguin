@@ -198,7 +198,7 @@ Using the sample code in /Expert C Programming/, pg.
 189, I am going to see if it causes a bus error.
 
 The address of the union must be divisible by 4 (or ~sizeof int~),
-as it can store an integer. As long as ~sizeof int < sizeof char~
+as it can store an integer. As long as ~sizeof int > sizeof char~
 (or ~sizeof int > 1~ as ~sizeof char == 1~), we can successfully
 get our bus error.
 
