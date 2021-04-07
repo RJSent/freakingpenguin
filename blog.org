@@ -434,7 +434,7 @@ Taylor series does not. At large \(x\) values, this Taylor series is
 completely wrong!
 
 Second, a Taylor series relies on the function being continuous (no
-holes or jumps). In addition to the function being continous, it's
+holes or jumps). In addition to the function being continous, its
 derivatives must be as well. Let's consider the following graph.
 
 #+begin_src gnuplot :file static/static/gnuplot-discontinuous-derivative.png :exports results
