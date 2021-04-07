@@ -214,7 +214,7 @@ get our bus error.
 #+end_src
 
 #+RESULTS:
-: p 17
+: *p 17
 
 Look at that! No problems. 
 
