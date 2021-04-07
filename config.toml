@@ -17,6 +17,8 @@ theme = "hugo-flex"
     math = true
     css = [ "css/lists.css", "css/code_blocks.css", "css/figures.css", ]
     width = "47rem"
+    summaries = true
+
 
 [permalinks]
     posts = "posts/:filename/"

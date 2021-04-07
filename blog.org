@@ -156,6 +156,16 @@ With some text underneath!
 :EXPORT_DATE: 2021-03-24
 :END:
 
+#+begin_summary
+Here, I explain what bus errors are and why they can occur. I explain
+how we can use certain compiler flags to catch runtime errors that may
+not actually occur. I explain how this improves program
+portability. After all that, I get a minor headache trying to get
+org-babel to display the results properly.
+#+end_summary
+
+#+hugo: more
+
 I was reading through Peter Linden's /Expert C Programming/ when I noticed
 an interesting example. On page 189, Peter talks about how one can
 cause a bus error. I've never had a bus error occur before. Maybe
@@ -364,6 +374,25 @@ I know why then a program that doesn't work and I don't know why.
 :EXPORT_FILE_NAME: fourier_series_1
 :EXPORT_DATE: 2021-04-06
 :END:
+
+#+begin_summary
+In this post, I begin work on calculating a Fourier series using C. I
+explain why one would use a Fourier series instead of a simpler
+alternative, such as Taylor series. Additionally, I cover how we
+can use the GNU Scientific Library, or GSL, to perform definite
+integration.
+#+end_summary
+
+#+hugo: more
+
+
+**** COMMENT Use ~#+hugo: more~ as a content divider when using summaries!
+
+https://ox-hugo.scripter.co/doc/hugo-summary-splitter/
+
+Don't trust what the [[https://gohugo.io/content-management/summaries/][official docs]] say. That only applies if I was
+using Hugo to read the org file directly. (Which I think they support?
+If it's not, that's a bug.
 
 **** An overview of Taylor series
 
