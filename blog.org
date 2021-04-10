@@ -685,6 +685,180 @@ series of a discontinuous, periodic function. We'll see if we can
 naively get away with using the simple ~gsl_integration_qng()~
 function, or if we need to find a more complicated, but more powerful, alternative.
 
+*** TODO Fourier Part 2: Integrating a Discontinuous Function :C:math:gnuplot:GSL:
+:PROPERTIES:
+:EXPORT_FILE_NAME: fourier_series_2
+:EXPORT_DATE: [2021-04-10 Sat]
+:END:
+
+
+#+begin_summary
+In this post, I look at how we can integrate a discontinuous function.
+
+#+end_summary
+
+#+hugo: more
+
+**** Checking if ~gsl_integration_qng()~ will work
+
+At the end of [[*Fourier Part 1: What is a Fourier series?]], I suggested
+that ~gsl_integraton_qng()~ would not be able to successfully
+integrate the function we want to find the Fourier series of. Here is
+the function I will find the Fourier expansion of throughout this
+series of posts.
+
+#+begin_src gnuplot :file static/static/gnuplot-fourier-function-orig.png
+  set title "Fourier Original Function"
+  set xtics nomirror
+  set grid
+  set xrange [-8:8]
+  set yrange [-2:6]
+  set yzeroaxis lw 2
+  set xzeroaxis lw 2
+  set samples 1500
+  set size ratio 0.7
+  f(x) = (x - 4 * (floor(x/4) % 4) > 3.99) ? NaN : \
+       x - 4 * (floor(x/4) % 4)
+  plot f(x) lw 2 lc rgb "#009e73"
+#+end_src
+
+#+RESULTS:
+[[file:static/static/gnuplot-fourier-function-orig.png]]
+
+Because this function is discontinuous, we have to approximate it with
+a Fourier series instead of a Taylor series. If we recall the formulas
+shown in the last part, we know that we will have to integrate \( f(x)
+\) from \( 0 \) to \(2l\), among other things. Let's try using
+~gsl_integration_qng()~ to calculate this integral.
+
+#+begin_src C :libs -lgsl -lcblas -lm :exports both
+      #include <stdio.h>
+      #include <gsl/gsl_integration.h>
+      #include <math.h>
+
+      /* f(x) = x for 0 <= x < 4, repeating */
+      double f(double x, void *params) {
+	const double period = 4;
+	double remainder = fmod(x, period);
+	double f = remainder;
+	return f;
+      }
+
+      int main() {
+	double result, error;
+	double low = 0, high = 8;
+	gsl_function F = {.function = &f};
+	double err_abs = 0, err_rel = 1;
+	size_t num_evals;
+
+	gsl_integration_qng(&F, low, high,
+			    err_abs, err_rel,
+			    &result, &error, &num_evals);
+	printf("result error num_evals\n");
+	printf("%f %f %zu\n", result, error, num_evals);
+      }
+#+end_src
+
+#+RESULTS:
+|    result |    error | num_evals |
+| 14.804436 | 8.015135 |        21 |
+
+Well, something happened here, but it's not quite what we wanted. We
+told =GSL= to take \( \int_0^8 f(x) dx \). Since we're dealing with a
+discontinuous function, we can rewrite this as \( \int_0^4 x dx +
+\int_4^8 x dx \) Now I'm no mathematician, but this answer should be
+16, not 14.8. Additionally, our error is very large, and if I attempt
+to lower ~err_rel~ to a smaller value, =GSL= yells at me saying that
+it failed to reach the requested error.
+
+This is not a problem on =GSL='s end. We aren't using the right
+integration function for the job! According to the =GSL= manual,
+
+#+begin_quote
+The QNG algorithm is a non-adaptive procedure which uses fixed
+Gauss-Kronrod-Patterson abscissae to sample the integrand at a maximum
+of 87 points. It is provided for fast integration of smooth functions.
+#+end_quote
+
+While that's a lot of words, the important part is the last sentence.
+~gsl_integration_qng()~ is for smooth functions. Our function is not
+smooth, it has a discontinuity! We will need to find an alternative
+function in =GSL= that can handle discontinuous graphs.
+
+**** ~gsl_integration_qag()~ and discontinuities
+
+Fortunately we do not have to look far. The very next function
+mentioned in the [[https://www.gnu.org/software/gsl/doc/html/integration.html][manual]] is what we need. ~gsl_integration_qag()~ has
+the following signature.
+
+#+begin_src C
+       int gsl_integration_qag(const gsl_function * f,
+			       double a, double b,
+			       double epsabs, double epsrel,
+			       size_t limit, int key,
+			       gsl_integration_workspace * workspace,
+			       double * result, double * abserr)
+#+end_src
+
+~f~, ~a~, ~b~, ~epsabs~, ~epsrel~, ~result~, and ~abserr~ are all the
+same as ~gsl_integration_qng()~. We can see that several new terms are
+introduced however.
+
+~workspace~ is a pointer to an area of memory used by
+~gsl_integration_qag()~. We allocate space by using the
+~gsl_integration_workspace_alloc()~ function, This function is passed
+an integer to adjust how much memory we want to allocate. Whatever
+integer we pass to ~gsl_integration_workspace_alloc()~,  we need to
+ensure that ~limit~ is the same. This way, ~gsl_integration_qag()~
+knows how much memory it has available.
+
+~key~ is a integer between 0 through 6. =GSL= recommends using higher
+values when integrating smooth functions, and lower values when
+functions are discontinuous.
+
+Let's see how well ~gsl_integration_qag()~ performs!
+
+#+begin_src C :libs -lgsl -lcblas -lm :exports both
+  #include <stdio.h>
+  #include <gsl/gsl_integration.h>
+  #include <math.h>
+
+  double f(double x, void *params) {
+    const double period = 4;
+    double remainder = fmod(x, period);
+    double f = remainder;
+    return f;
+  }
+
+  int main() {
+    size_t limit = 1024;
+    gsl_integration_workspace *w
+      = gsl_integration_workspace_alloc(limit);
+    double result, error;
+    double low = 0, high = 8;
+    gsl_function F = {.function = &f};
+    double err_abs = 0, err_rel = 1e-7;
+
+    gsl_integration_qag(&F, low, high,
+			err_abs, err_rel,
+			limit, 1, w,
+			&result, &error);
+    /* get into the habit of freeing memory when done! */
+    gsl_integration_workspace_free(w);
+    printf("result error\n");
+    printf("%f %f\n", result, error);
+  }
+#+end_src
+
+#+RESULTS:
+| result | error |
+|   16.0 |   0.0 |
+
+Look at that! We are getting the exact value we expected, even though
+we're integrating with a discontinuity. We are now at the point where
+we can calculate the Fourier series for our function.
+
+
 ** TODO stm8-card						  :@stm8_card:
 
 *** COMMENT Outline
