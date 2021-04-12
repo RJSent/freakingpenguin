@@ -731,31 +731,31 @@ shown in the last part, we know that we will have to integrate \( f(x)
 ~gsl_integration_qng()~ to calculate this integral.
 
 #+begin_src C :libs -lgsl -lcblas -lm :exports both
-      #include <stdio.h>
-      #include <gsl/gsl_integration.h>
-      #include <math.h>
+  #include <stdio.h>
+  #include <gsl/gsl_integration.h>
+  #include <math.h>
 
-      /* f(x) = x for 0 <= x < 4, repeating */
-      double f(double x, void *params) {
-	const double period = 4;
-	double remainder = fmod(x, period);
-	double f = remainder;
-	return f;
-      }
+  /* f(x) = x for 0 <= x < 4, repeating */
+  double f(double x, void *params) {
+    const double period = 4;
+    double remainder = fmod(x, period);
+    double f = remainder;
+    return f;
+  }
 
-      int main() {
-	double result, error;
-	double low = 0, high = 8;
-	gsl_function F = {.function = &f};
-	double err_abs = 0, err_rel = 1;
-	size_t num_evals;
+  int main() {
+    double result, error;
+    double low = 0, high = 8;
+    gsl_function F = {.function = &f};
+    double err_abs = 0, err_rel = 1;
+    size_t num_evals;
 
-	gsl_integration_qng(&F, low, high,
-			    err_abs, err_rel,
-			    &result, &error, &num_evals);
-	printf("result error num_evals\n");
-	printf("%f %f %zu\n", result, error, num_evals);
-      }
+    gsl_integration_qng(&F, low, high,
+			err_abs, err_rel,
+			&result, &error, &num_evals);
+    printf("result error num_evals\n");
+    printf("%f %f %zu\n", result, error, num_evals);
+  }
 #+end_src
 
 #+RESULTS:
@@ -791,12 +791,12 @@ mentioned in the [[https://www.gnu.org/software/gsl/doc/html/integration.html][m
 the following signature.
 
 #+begin_src C
-       int gsl_integration_qag(const gsl_function * f,
-			       double a, double b,
-			       double epsabs, double epsrel,
-			       size_t limit, int key,
-			       gsl_integration_workspace * workspace,
-			       double * result, double * abserr)
+  int gsl_integration_qag(const gsl_function * f,
+			  double a, double b,
+			  double epsabs, double epsrel,
+			  size_t limit, int key,
+			  gsl_integration_workspace * workspace,
+			  double * result, double * abserr)
 #+end_src
 
 ~f~, ~a~, ~b~, ~epsabs~, ~epsrel~, ~result~, and ~abserr~ are all the
@@ -857,6 +857,158 @@ Look at that! We are getting the exact value we expected, even though
 we're integrating with a discontinuity. We are now at the point where
 we can calculate the Fourier series for our function.
 
+
+**** Generating our Fourier series
+
+Let's recall that we can find our \(a_n\) and \(b_n\) coefficients
+with the following formulas.
+
+\[ a_n = \frac{1}{l} \int_{0}^{2l} f(x) \cos(\frac{n \pi x }{l}) dx \]
+
+\[ b_n = \frac{1}{l} \int_{0}^{2l} f(x) \sin(\frac{n \pi x }{l}) dx \]
+
+=GSL= expects us to only pass one function to it as an argument. That
+means that unlike before, we can't just pass a pointer to our function
+~f()~, as =GSL= won't be multiplying it by the cosine and sine terms.
+
+There are a couple of solutions to this that I can think of. The first
+is to make use of the ~void *~ argument that =GSL= includes in the
+~gsl_function~ structure. Using this, we could pass extra information
+to ~f()~, adapting it to our specific n value.
+
+Alternatively, we could write a parent function, like ~aorb_subn()~. This
+function would then be stored in the ~gsl_function~ structure. The
+advantage of this approach is that the function we want the Fourier
+series of, ~f(x)~, is distinct in our code. Hopefully this makes
+everything a bit easier to follow along.
+
+This is what the code to calculate the Fourier series looks like.
+
+#+NAME: tbl-fourier-asubn-bsubn
+#+begin_src C :libs -lgsl -lgslcblas -lm :colnames '("n" "a_subn" "b_subn") :exports both :eval yes
+  #include <stdbool.h>
+  #include <gsl/gsl_integration.h>
+  #include <math.h>
+  #include <stdio.h>
+
+  #define PI 3.14159
+  const double period = 4;
+  const double l = period / 2;
+
+  struct aorb_params {
+    double (*f)(double x, void *params);
+    int n;
+    bool calc_a;
+  };
+
+  double f(double x, void *params) {
+    double remainder = fmod(x, period);
+    double f = remainder;
+    return f;
+  }
+
+  /* Params should be pointer to struct aorb_param. Leaving as a void
+     pointer to match example. I might be able to change it in
+     signature */
+  double aorb_subn(double x, struct aorb_params *params) {
+    int n = params->n;
+    double (*f)(double, void *) = params->f;
+    /* Are we calculating a or b? */
+    double trig = params->calc_a ? cos(PI*n*x/l) : sin(PI*n*x/l);
+    return f(x, NULL) * trig;
+  }
+
+  double get_aorb_subn(double (*f)(double x, void *params), int n, 
+		       double low, double high, bool get_a) {
+    double normalization = 1/l;
+    if (get_a && n == 0) normalization *= 0.5;
+
+    size_t limit = 1024;
+    gsl_integration_workspace *w
+      = gsl_integration_workspace_alloc(limit);
+    double result, error;
+    gsl_function F = {.function = &aorb_subn,
+      .params = &(struct aorb_params){ .f = f, .n = n,
+			.calc_a = get_a}};
+    double err_abs = 0, err_rel = 1e-7;
+
+    gsl_integration_qag(&F, low, high,
+			err_abs, err_rel,
+			limit, 1, w,
+			&result, &error);
+    gsl_integration_workspace_free(w);
+    result *= normalization;
+
+    return result;
+  }
+
+  int main() {
+    const int upto = 10;
+    double a_subn[upto];
+    double b_subn[upto];
+    double low = 0, high = period;
+
+    for (int i = 0; i < upto; i++) {
+      a_subn[i] = get_aorb_subn(f, i, low, high, true);
+      b_subn[i] = get_aorb_subn(f, i, low, high, false);
+      printf("%d %f %f\n", i, a_subn[i], b_subn[i]);
+    }
+  }
+#+end_src
+
+#+RESULTS[53ffdf67fbaaa1503e7d27c43626f8926ad0d458]: tbl-fourier-asubn-bsubn
+| n | a_subn |    b_subn |
+|---+--------+-----------|
+| 0 |    2.0 |       0.0 |
+| 1 | -7e-06 | -1.273242 |
+| 2 | -7e-06 | -0.636621 |
+| 3 | -7e-06 | -0.424414 |
+| 4 | -7e-06 |  -0.31831 |
+| 5 | -7e-06 | -0.254648 |
+| 6 | -7e-06 | -0.212207 |
+| 7 | -7e-06 | -0.181892 |
+| 8 | -7e-06 | -0.159155 |
+| 9 | -7e-06 | -0.141471 |
+
+Like I mentioned before, ~aorb_subn~ is a "parent function", that
+combines ~f()~ and a sine/cosine term. In math terms, it is like going
+from \(f(x) \cos(\frac{n \pi x }{l} \) and \(f(x) \sin(\frac{n \pi x
+}{l}) \) to \( g(x, n, a \_ or \_ b) \).
+
+Interestingly, if we use the \(\pi\) constant ~M_PI~, the integration
+fails due to roundoff error. Fortunately we can get "close enough"
+values by just using a few less digits.
+
+Once we graph the Fourier series generated by these coefficients, this
+is what we get.
+
+#+begin_src gnuplot :var data=tbl-fourier-asubn-bsubn :file static/static/gnuplot-asubn-bsubn.png :exports results
+  set title "Fourier Series"
+  set xtics nomirror
+  set yrange [-2:6]
+  set xrange [-8:8]
+  set grid
+  set xzeroaxis lt 1 lc "black" lw 1
+  set size ratio 0.7
+  set samples 400
+  getValue(row,col,filename) = system('awk ''{if (NR == '.row.') print $'.col.'}'' '.filename.'')
+  fourier(x, n) = getValue(n+1, 2, data) * cos(pi*n*x/2) + getValue(n+1, 3, data) * sin(pi*n*x/2)
+  # plot for [i=1:9] fourier(x, i) title ''
+  plot sum [n=0:9] fourier(x, n) notitle
+#+end_src
+
+#+RESULTS:
+[[file:static/static/gnuplot-asubn-bsubn.png]]
+
+And there we are! A fourier expansion generated for a discontinuous
+periodic function. The more terms we add, the more accurate the approximation.
+
+***** COMMENT GNUPlot fails to generate above graph on export
+
+I suspect the issue here is that the data table is not available on
+export. To fix this for right now, I am now executing the C block on
+export. This isn't a sustainable solution since it requires the
+libraries to be present on any server.
 
 ** TODO stm8-card						  :@stm8_card:
 
