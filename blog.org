@@ -150,7 +150,7 @@ With some text underneath!
 
 ** Musings :@musings:
 
-*** Are bus errors still commonplace? Plus a bonus discussion on =org-babel=. :C:low_level:org:babel:
+*** Are bus errors still commonplace? Plus a bonus discussion on =org-babel=. :C:low_level:babel:
 :PROPERTIES:
 :EXPORT_FILE_NAME: bus_errors_1
 :EXPORT_DATE: 2021-03-24
