@@ -912,7 +912,6 @@ This is what the code to calculate the Fourier series looks like.
     return fmod(x, period);
   }
 
-  /* g(x, n, aorb) */
   double aorb_subn(double x, struct aorb_params *params) {
     int n = params->n;
     double trig = params->calc_a ? cos(PI*n*x/l) : sin(PI*n*x/l);
@@ -930,7 +929,7 @@ This is what the code to calculate the Fourier series looks like.
     double result, error;
     gsl_function F = { .function = &aorb_subn,
       .params = &(struct aorb_params){ .f = f, .n = n,
-			.calc_a = get_a } };
+			 .calc_a = get_a } };
     double err_abs = 0, err_rel = 1e-7;
 
     gsl_integration_qag(&F, low, high,
@@ -981,10 +980,10 @@ libraries to be present on any server.
 I found a better solution. Manually give the table a name.
 #+end_comment
 
-Like I mentioned before, ~aorb_subn~ is a "parent function", that
-combines ~f(x)~ and a sine/cosine term. In math terms, it is like going
-from \(f(x) \cos(\frac{n \pi x }{l}) \) and \(f(x) \sin(\frac{n \pi x
-}{l}) \) to \( g(x, n, aorb) \).
+Like I mentioned before, ~aorb_subn~ is a "parent function" that
+combines ~f(x)~ and the sine/cosine term. This is the function we
+integrate, and we provide it enough information to know what term we
+are calculating.
 
 Interestingly, if we use the \( \pi \) constant ~M_PI~, the integration
 fails due to roundoff error. Fortunately we can get "close enough"
