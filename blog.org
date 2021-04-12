@@ -867,18 +867,19 @@ with the following formulas.
 
 =GSL= expects us to only pass one function to it as an argument. That
 means that, unlike before, we can't just pass a pointer to our function
-~f()~, as =GSL= won't be multiplying it by the cosine and sine terms.
+~f(x)~, as =GSL= won't be multiplying it by the cosine and sine terms.
 
 There are a couple of solutions to this that I can think of. The first
 is to make use of the ~void *~ argument that =GSL= includes in the
 ~gsl_function~ structure. Using this, we could pass extra information
-to ~f()~, adapting it to our specific n value.
+to ~f(x)~, adapting it to our specific n value.
 
 Alternatively, we could write a parent function, like ~aorb_subn()~. This
 function would then be stored in the ~gsl_function~ structure. The
 advantage of this approach is that the function we want the Fourier
 series of, ~f(x)~, is distinct in our code. This should make it a bit
-easier to change ~f(x)~ to any function that we want.
+easier to change ~f(x)~ to any function that we want. This is the
+approach that I will take.
 
 To make this code hopefully a bit more modular, I moved the
 integration out of main, and instead into a function called
@@ -970,11 +971,11 @@ This is what the code to calculate the Fourier series looks like.
 | 9 | -7e-06 | -0.141471 |
 
 Like I mentioned before, ~aorb_subn~ is a "parent function", that
-combines ~f()~ and a sine/cosine term. In math terms, it is like going
-from \(f(x) \cos(\frac{n \pi x }{l} \) and \(f(x) \sin(\frac{n \pi x
+combines ~f(x)~ and a sine/cosine term. In math terms, it is like going
+from \(f(x) \cos(\frac{n \pi x }{l}) \) and \(f(x) \sin(\frac{n \pi x
 }{l}) \) to \( g(x, n, a \_ or \_ b) \).
 
-Interestingly, if we use the \(\pi\) constant ~M_PI~, the integration
+Interestingly, if we use the \( \pi \) constant ~M_PI~, the integration
 fails due to roundoff error. Fortunately we can get "close enough"
 values by just using a few less digits.
 
