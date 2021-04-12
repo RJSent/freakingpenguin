@@ -726,20 +726,19 @@ the function I will find the Fourier series of.
 Because this function is discontinuous, we have to approximate it with
 a Fourier series instead of a Taylor series. If we recall the formulas
 shown in the last part, we know that we will have to integrate \( f(x)
-\) from \( 0 \) to \(2l\), among other things. Let's try using
-~gsl_integration_qng()~ to calculate this integral.
+\) from \( 0 \) to \(2l\), among other things. Before calculating the
+Fourier series, let's try using ~gsl_integration_qng()~ to perform
+basic integration.
 
 #+begin_src C :libs -lgsl -lcblas -lm :exports both
   #include <stdio.h>
-  #include <gsl/gsl_integration.h>
   #include <math.h>
+  #include <gsl/gsl_integration.h>
 
   /* f(x) = x for 0 <= x < 4, repeating */
   double f(double x, void *params) {
     const double period = 4;
-    double remainder = fmod(x, period);
-    double f = remainder;
-    return f;
+    return fmod(x, period);
   }
 
   int main() {
@@ -887,16 +886,16 @@ integration out of main, and instead into a function called
 coefficient for a function ~f(x)~, using the variable ~get_a~ to
 determine if it should calculate \( a_n \) or \( b_n \). It may be
 better to wrap this in a ~fourier~ structure that contains the two
-terms, but I elected not to do that to hopefully maintain some simplicity.
+terms, but I elected not to do that to hopefully maintain some vague
+semblance of readability.
 
 This is what the code to calculate the Fourier series looks like.
 
-#+NAME: babel-fourier-asubn-bsubn
 #+begin_src C :libs -lgsl -lgslcblas -lm :colnames '("n" "a_subn" "b_subn") :exports both
   #include <stdbool.h>
-  #include <gsl/gsl_integration.h>
-  #include <math.h>
   #include <stdio.h>
+  #include <math.h>
+  #include <gsl/gsl_integration.h>
 
   #define PI 3.14159
   const double period = 4;
@@ -909,8 +908,7 @@ This is what the code to calculate the Fourier series looks like.
   };
 
   double f(double x, void *params) {
-    double f = fmod(x, period);
-    return f;
+    return fmod(x, period);
   }
 
   /* g(x, n, a_or_b) */
@@ -923,7 +921,7 @@ This is what the code to calculate the Fourier series looks like.
   double get_aorb_subn(double (*f)(double x, void *params), int n, 
 		       double low, double high, bool get_a) {
     double normalization = 1/l;
-    if (get_a && n == 0) normalization *= 0.5;
+    if (get_a && n == 0) normalization /= 2;
 
     size_t limit = 1024;
     gsl_integration_workspace *w
