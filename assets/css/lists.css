@@ -1,7 +1,7 @@
-article ul li :not(footer) {
+article ul li :not(footer) :not(.footnotes) {
     line-height: 0.75em;
 }
 
-article ol li :not(footer) {
+article ol li :not(footer) :not(.footnotes) {
     line-height: 0.75em;
 }
