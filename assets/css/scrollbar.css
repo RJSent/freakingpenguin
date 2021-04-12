@@ -1,0 +1,5 @@
+/* https://stackoverflow.com/a/39289453 */
+html {
+  overflow-x: hidden;
+  margin-right: calc(-1 * (100vw - 100%));
+}
