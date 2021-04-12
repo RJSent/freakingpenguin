@@ -834,9 +834,7 @@ Let's see how well ~gsl_integration_qag()~ performs!
 
   double f(double x, void *params) {
     const double period = 4;
-    double remainder = fmod(x, period);
-    double f = remainder;
-    return f;
+    return fmod(x, period);
   }
 
   int main() {
