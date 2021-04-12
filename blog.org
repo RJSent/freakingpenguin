@@ -884,8 +884,8 @@ everything a bit easier to follow along.
 
 This is what the code to calculate the Fourier series looks like.
 
-#+NAME: tbl-fourier-asubn-bsubn
-#+begin_src C :libs -lgsl -lgslcblas -lm :colnames '("n" "a_subn" "b_subn") :exports both :eval yes
+#+NAME: babel-fourier-asubn-bsubn
+#+begin_src C :libs -lgsl -lgslcblas -lm :colnames '("n" "a_subn" "b_subn") :exports both
   #include <stdbool.h>
   #include <gsl/gsl_integration.h>
   #include <math.h>
@@ -956,7 +956,8 @@ This is what the code to calculate the Fourier series looks like.
   }
 #+end_src
 
-#+RESULTS[53ffdf67fbaaa1503e7d27c43626f8926ad0d458]: tbl-fourier-asubn-bsubn
+#+NAME: tbl-fourier-asubn-bsubn
+#+RESULTS: babel-fourier-asubn-bsubn
 | n | a_subn |    b_subn |
 |---+--------+-----------|
 | 0 |    2.0 |       0.0 |
@@ -1009,6 +1010,8 @@ I suspect the issue here is that the data table is not available on
 export. To fix this for right now, I am now executing the C block on
 export. This isn't a sustainable solution since it requires the
 libraries to be present on any server.
+
+I found a better solution. Manually give the table a name.
 
 ** TODO stm8-card						  :@stm8_card:
 
