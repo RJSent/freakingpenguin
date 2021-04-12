@@ -912,7 +912,7 @@ This is what the code to calculate the Fourier series looks like.
     return fmod(x, period);
   }
 
-  /* g(x, n, a_or_b) */
+  /* g(x, n, aorb) */
   double aorb_subn(double x, struct aorb_params *params) {
     int n = params->n;
     double trig = params->calc_a ? cos(PI*n*x/l) : sin(PI*n*x/l);
@@ -984,7 +984,7 @@ I found a better solution. Manually give the table a name.
 Like I mentioned before, ~aorb_subn~ is a "parent function", that
 combines ~f(x)~ and a sine/cosine term. In math terms, it is like going
 from \(f(x) \cos(\frac{n \pi x }{l}) \) and \(f(x) \sin(\frac{n \pi x
-}{l}) \) to \( g(x, n, a \_ or \_ b) \).
+}{l}) \) to \( g(x, n, aorb) \).
 
 Interestingly, if we use the \( \pi \) constant ~M_PI~, the integration
 fails due to roundoff error. Fortunately we can get "close enough"
