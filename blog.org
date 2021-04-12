@@ -694,10 +694,9 @@ CLOSED: [2021-04-12 Mon 13:48]
 
 #+begin_summary
 In this post, I look at how we can integrate a discontinuous function.
-I explain the limitations of the ~gsl_integration_qng()~ function, as
-well as provide an alternative. I show how to use this alternative.
-Afterwards, I finally calculate the Fourier series for a discontinuous
-periodic function.
+I explain the limitations of the gsl_integration_qng() function, as
+well as provide an alternative. Afterwards, I finally calculate the
+Fourier series for a discontinuous periodic function.
 #+end_summary
 
 #+hugo: more
