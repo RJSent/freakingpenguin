@@ -956,7 +956,7 @@ This is what the code to calculate the Fourier series looks like.
 #+end_src
 
 #+NAME: tbl-fourier-asubn-bsubn
-#+RESULTS: babel-fourier-asubn-bsubn
+#+RESULTS:
 | n | a_subn |    b_subn |
 |---+--------+-----------|
 | 0 |    2.0 |       0.0 |
