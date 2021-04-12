@@ -649,27 +649,27 @@ subdirectory. (If you installed this through your systems package
 manager, you can probably find this file in =/usr/include/gsl/=.)
 
 #+begin_src C :libs -lgsl -lcblas -lm :eval no-export :exports both
-   #include <stdio.h>
-   #include <gsl/gsl_integration.h>
-   #include <math.h>
+  #include <stdio.h>
+  #include <gsl/gsl_integration.h>
+  #include <math.h>
 
-   /* This is where we define the function */
-   double f(double x, void *params) {
-     return x;
-   }
+  /* This is where we define the function */
+  double f(double x, void *params) {
+    return x;
+  }
 
-   int main() {
-     double result, error;
-     double low = 0, high = 8;
-     gsl_function F = {.function = &f};
-     double err_abs = 0, err_rel = 1;
-     size_t num_evals;
+  int main() {
+    double result, error;
+    double low = 0, high = 8;
+    gsl_function F = {.function = &f};
+    double err_abs = 0, err_rel = 1;
+    size_t num_evals;
 
-     gsl_integration_qng(&F, low, high, err_abs, err_rel,
-			 &result, &error, &num_evals);
-     printf("result error num_evals\n");
-     printf("%f %f %zu\n", result, error, num_evals);
-   }
+    gsl_integration_qng(&F, low, high, err_abs, err_rel,
+			&result, &error, &num_evals);
+    printf("result error num_evals\n");
+    printf("%f %f %zu\n", result, error, num_evals);
+  }
 #+end_src
 
 #+RESULTS:
