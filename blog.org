@@ -684,7 +684,8 @@ series of a discontinuous, periodic function. We'll see if we can
 naively get away with using the simple ~gsl_integration_qng()~
 function, or if we need to find a more complicated, but more powerful, alternative.
 
-*** TODO Fourier Part 2: Integrating a Discontinuous Function :C:math:gnuplot:GSL:
+*** DONE Fourier Part 2: Integrating a Discontinuous Function :C:math:gnuplot:GSL:
+CLOSED: [2021-04-12 Mon 13:48]
 :PROPERTIES:
 :EXPORT_FILE_NAME: fourier_series_2
 :EXPORT_DATE: [2021-04-10 Sat]
