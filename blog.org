@@ -970,6 +970,17 @@ This is what the code to calculate the Fourier series looks like.
 | 8 | -7e-06 | -0.159155 |
 | 9 | -7e-06 | -0.141471 |
 
+#+begin_comment
+*GNUPlot fails to generate graph on export*
+
+I suspect the issue here is that the data table is not available on
+export. To fix this for right now, I am now executing the C block on
+export. This isn't a sustainable solution since it requires the
+libraries to be present on any server.
+
+I found a better solution. Manually give the table a name.
+#+end_comment
+
 Like I mentioned before, ~aorb_subn~ is a "parent function", that
 combines ~f(x)~ and a sine/cosine term. In math terms, it is like going
 from \(f(x) \cos(\frac{n \pi x }{l}) \) and \(f(x) \sin(\frac{n \pi x
@@ -1001,17 +1012,9 @@ is what we get.
 #+RESULTS:
 [[file:static/static/gnuplot-asubn-bsubn.png]]
 
-And there we are! A fourier expansion generated for a discontinuous
-periodic function. The more terms we add, the more accurate the approximation.
-
-***** COMMENT GNUPlot fails to generate above graph on export
-
-I suspect the issue here is that the data table is not available on
-export. To fix this for right now, I am now executing the C block on
-export. This isn't a sustainable solution since it requires the
-libraries to be present on any server.
-
-I found a better solution. Manually give the table a name.
+And there we are! Here is a Fourier series generated for a discontinuous
+periodic function. The more terms we add, the more accurate the
+approximation.
 
 ** TODO stm8-card						  :@stm8_card:
 
