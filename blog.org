@@ -2,7 +2,7 @@
 #+HUGO_BASE_DIR: ./
 #+PROPERTY: header-args:mermaid :eval yes
 #+PROPERTY: header-args:gnuplot :eval yes
-#+PROPERTY: header-args         :eval no-export :cache yes
+#+PROPERTY: header-args         :eval no-export
 
 * Homepage
 :PROPERTIES:
