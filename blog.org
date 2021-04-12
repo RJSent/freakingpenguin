@@ -560,12 +560,11 @@ equals our period.
 There is one special case that we need to discuss. When \( n = 0 \),
 we need a new formula for \( a_0 \). This formula will look like
 
-\[ a_o = \frac{1}{l} \int_{0}^{2l} f(x) dx \]
+\[ a_0 = \frac{1}{2l} \int_{0}^{2l} f(x) dx \]
 
-Fortunately there is no special case for \( b_0 \). This is because
-when \( n = 0 \), we will get \( \sin 0 \) in our original \( a_n \)
-formula. Because \( \sin 0 = 0 \), we would find that \( a_0 = 0 \)
-for any function, which is not the case.
+Fortunately there is no special case for \( b_0 \). This occurs due to
+the fact that \( a_0 \) is a constant term ( \( \cos 0 = 1 \) as
+opposed to periodic.
 
 That is all the theory that we need to calculate the Fourier series!
 As long as we can find a library that can perform integration for us,
