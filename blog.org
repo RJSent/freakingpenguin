@@ -829,8 +829,8 @@ Let's see how well ~gsl_integration_qag()~ performs!
 
 #+begin_src C :libs -lgsl -lcblas -lm :exports both
   #include <stdio.h>
-  #include <gsl/gsl_integration.h>
   #include <math.h>
+  #include <gsl/gsl_integration.h>
 
   double f(double x, void *params) {
     const double period = 4;
