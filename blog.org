@@ -703,11 +703,10 @@ In this post, I look at how we can integrate a discontinuous function.
 At the end of [[*Fourier Part 1: What is a Fourier series?]], I suggested
 that ~gsl_integraton_qng()~ would not be able to successfully
 integrate the function we want to find the Fourier series of. Here is
-the function I will find the Fourier expansion of throughout this
-series of posts.
+the function I will find the Fourier series of.
 
 #+begin_src gnuplot :file static/static/gnuplot-fourier-function-orig.png
-  set title "Fourier Original Function"
+  set title "Original Function"
   set xtics nomirror
   set grid
   set xrange [-8:8]
@@ -718,7 +717,7 @@ series of posts.
   set size ratio 0.7
   f(x) = (x - 4 * (floor(x/4) % 4) > 3.99) ? NaN : \
        x - 4 * (floor(x/4) % 4)
-  plot f(x) lw 2 lc rgb "#009e73"
+  plot f(x) lw 2 lc rgb "#009e73" notitle
 #+end_src
 
 #+RESULTS:
@@ -990,9 +989,10 @@ is what we get.
   set yrange [-2:6]
   set xrange [-8:8]
   set grid
-  set xzeroaxis lt 1 lc "black" lw 1
+  set yzeroaxis lw 2
+  set xzeroaxis lw 2
   set size ratio 0.7
-  set samples 400
+  set samples 200
   getValue(row,col,filename) = system('awk ''{if (NR == '.row.') print $'.col.'}'' '.filename.'')
   fourier(x, n) = getValue(n+1, 2, data) * cos(pi*n*x/2) + getValue(n+1, 3, data) * sin(pi*n*x/2)
   # todo automatically iterate # rows in table
