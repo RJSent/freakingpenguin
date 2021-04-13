@@ -1,3 +1,9 @@
 li p {
     margin: 0.2em;
 }
+
+.fixed-width {
+    width: 12.5%;
+    display: inline-block;
+    min-width: initial;
+}
