@@ -3,7 +3,6 @@ li p {
 }
 
 .fixed-width {
-    width: 12.5%;
+    width: 5.3em;
     display: inline-block;
-    min-width: initial;
 }
