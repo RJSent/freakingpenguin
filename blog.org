@@ -413,11 +413,15 @@ some ways to implement this!
 
 The first thought that might come to our mind might be something like
 what's below. Because (spoilers) this code seg faults, I wrote a
-signal handler so we still see some kind of results. Calling most
-library functions in signal handlers is a bad idea, so I'm using the
-~write()~ system call. Headers are excluded for compactness. I'm using
-~fflush()~ as ~printf()~ buffers its output. If we exit through our
-signal handler, the ~printf()~ is not printed.
+signal handler so we still see some kind of results.
+
+Calling most library functions in signal handlers is a bad idea, so
+I'm using the ~write()~ system call. Headers are excluded for
+compactness. I'm using ~fflush()~ as ~printf()~ buffers its output.
+Otherwise, the first ~printf()~ will not appear. Lastly, even though
+an error occurs, I'm exiting with a zero exit code because of
+=org-babel= limitations. You can find out more about this in [[*Crash
+and burn programming][this post]].
 
 #+begin_comment
  I'll be using the ~dup2()~ call so we can see what
@@ -433,6 +437,9 @@ it's part of the heading.
 Not sure why =org-babel= is displayed in the link, it shouldn't be.
 
 Maybe I should use ~counsel-org-link~ instead.
+
+Actually no, there's a bug in =ox-hugo= where links do not work when
+an id property is used.
 #+end_comment
 
 #+begin_src C :includes <stdio.h> <unistd.h> <signal.h> :results verbatim :exports both
