@@ -369,7 +369,8 @@ forget about it, you will at least get a warning when undefined
 behavior occurs! I'd much rather have a program that doesn't work but
 I know why then a program that doesn't work and I don't know why.
 
-*** TODO Circular pointers in C
+*** DONE Circular pointers in C
+CLOSED: [2021-04-15 Thu 12:35]
 :PROPERTIES:
 :EXPORT_DATE: [2021-04-15 Thu]
 :EXPORT_FILE_NAME: circular_pointers
