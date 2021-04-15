@@ -532,7 +532,7 @@ to treat this as another type for right now".
 In this case, we're saying "Hey, you know that integer pointer p?
 Let's treat it as pointer to a pointer to an integer for right now".
 
-***** ~sizeof int *~ vs ~sizeof int~
+***** ~sizeof (int *)~ vs ~sizeof (int)~
 
 The last thing to remember deals with sizes. In 64-bit systems, a
 pointer is 64-bits long, regardless of the type it points to. ~sizeof
