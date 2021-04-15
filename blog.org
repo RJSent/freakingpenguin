@@ -530,7 +530,7 @@ to treat this as another type for right now".
 #+end_src
 
 In this case, we're saying "Hey, you know that integer pointer p?
-Let's treat it as pointer to a pointer to an integer for this line".
+Let's treat it as pointer to a pointer to an integer for right now".
 
 ***** ~sizeof int *~ vs ~sizeof int~
 
