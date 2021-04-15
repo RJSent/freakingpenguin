@@ -376,6 +376,10 @@ I know why then a program that doesn't work and I don't know why.
 :END:
 
 #+begin_summary
+In this post, I mess around with pointers in ways that are definitely
+not intended. I discuss several pitfalls when creating a pointer that
+points to itself. I create two possible implementations of circular
+pointers, and also find a limitation in C at the very end.
 #+end_summary
 
 #+hugo: more
@@ -456,48 +460,212 @@ attempt to store the value in p, 0, in the value pointed to by p, 0.
 In other words, we're attempting to dereference a ~NULL~ pointer,
 causing a seg fault.
 
-**** Solution: malloc!
+**** Some background
 
 Okay, so all we need to do is ~malloc()~ space for the pointer p to
-point to. Easy, right? Before we get to that though, there's one thing
-we have to remember. ~p~ is an ~int *~. If we try to do ~**p~, our
-compiler will complain about an invalid type argument. You can't
-dereference an ~int *~ twice!
+point to. Easy, right? Before we get to that though, there's a few
+things we have to keep in mind.
+
+***** Malloc with multiple levels of pointers
+
+First, we need to be careful
+allocating space for variables when using multiple levels of pointers.
+For example,
+
+#+begin_src C :includes <stdio.h> <malloc.h>
+  int **p = malloc(sizeof (int));
+  ,**p = 1;
+#+end_src
+
+will seg fault! p is a pointer to a pointer containing an int. When we
+malloc memory, malloc will return a pointer to a block of memory large
+enough to contain an int. If we type ~**p~, we're saying "Go to the
+malloced block, then go to where the malloced block is pointing at
+and set that block to 1". Because ~malloc()~'d memory can be anything,
+we are accessing memory at random! This is an easy recipe for a seg
+fault. One way to fix this is to use multiple variables, for
+instance...
+
+#+begin_src C :includes <stdio.h> <malloc.h>
+  int *p1  = malloc(sizeof (int));
+  int **p2 = &p1;
+  ,**p2    = 7;
+  printf("***p2 %d", **p2);
+#+end_src
+
+#+RESULTS:
+: ***p2 7
+
+***** Compile time errors dereferencing pointers
+
+Next up, if we have ~int *p~, then ~p~ is an ~int *~. If we try to do ~**p~, our
+compiler will complain about an invalid type argument and fail to compile. You can't
+dereference an ~int *~ two times!
 
 The compiler helpfully assumes that you would never dereference a
 pointer more than the number of pointers you have. In other words,
 
-#+begin_src C :include <stdio.h> <malloc.h>
-  int ****p = malloc(sizeof (int));
-  ,****p = 7;
-  printf("****p %d\n", ****p);
+#+begin_src C :includes <stdio.h> <malloc.h> :eval no :exports code
+  int *p = malloc(sizeof (int));
+  printf("*p1 %d\n", *p);
 #+end_src
 
-#+RESULTS:
+will compile, but
 
-Well, you can see that our good friend the
-signal handler is still here, so maybe not.
+#+begin_src C :includes <stdio.h> <malloc.h> :eval no :exports code
+  int *p  = malloc(sizeof (int));
+  printf("**p1 %d\n", **p);
+#+end_src
 
-#+begin_src C :includes <stdio.h> <malloc.h> <unistd.h> <signal.h> :results verbatim :exports both
-  void segfault(int sig_num) {
-    fflush(stdout);
-    write(STDOUT_FILENO, "Segfault!\n", 9);
-    _exit(0);
-  }
+will not compile. The compiler sees that *p1 is an int pointer, so it
+knows ~**p~ is always invalid. If we pretend seg faults don't exist
+for a second, we can fix this issue using casts! A cast tells the
+compiler "Hey, I know that ~p~ is an integer pointer, but I need you
+to treat this as another type for right now".
 
+#+begin_src C :includes <stdio.h> <malloc.h> :eval no :exports code
+  int *p  = malloc(sizeof (int));
+  printf("**p %l", **(int **)p);
+#+end_src
+
+In this case, we're saying "Hey, you know that integer pointer p?
+Let's treat it as pointer to a pointer to an integer for this line".
+
+***** ~sizeof int *~ vs ~sizeof int~
+
+The last thing to remember deals with sizes. In 64-bit systems, a
+pointer is 64-bits long, regardless of the type it points to. ~sizeof
+int* == sizeof char* =​= sizeof double** =​= 8~. Using what we've
+learned so far, let's say we have the following code block.
+
+#+begin_src C :includes <stdio.h> <malloc.h> :eval no
+  int *p = malloc(sizeof (int));
+  ,*p = (int)p;
+  printf("**p %d", **(int **)p);
+#+end_src
+
+We've managed to get everything right! Except for one little part.
+~*p~ is an integer, not an integer pointer. We store the integer
+pointer ~p~ in ~*p~. Because ~sizeof (int *) =​= 8~ and ~sizeof (int)
+== 4~ (on my machine), part of the pointer is chopped off! ~p~ needs
+to point to a type that is the same size (or larger) than an integer
+pointer.[fn:2:Or any non-function pointer. There is no guarantee that
+a function pointer is the same size as a integer/double/etc pointer,
+and they're more of a abstraction that exists in our code than
+something that's really "there", like integers in memory.]
+
+The C standard actually includes an integer type that is guaranteed to
+be the same size as a pointer, the signed ~intptr_t~ or unsigned
+~uintptr_t~ types defined in =stdint.h=. I'll stay away from these
+since I'm worried it'll make it a bit more confusing.
+
+Time to put all of this into the most pointless (HAHAHAHAHA) practice
+imaginable.
+
+**** Circular pointers with ~malloc()~!
+
+Let's take what we've learned and try to create a pointer that points
+to itself, and one where we can dereference it as many times as we want!
+
+#+begin_src C :includes <stdio.h> <malloc.h> :exports both
   int main(void) {
-    signal(SIGSEGV, segfault);
-    int *p = malloc(sizeof (int *));
-    ,*p = p;
-    printf(" p  0x%x\n",  p);
-    printf("*p  0x%x\n",  *p);
-    printf("**p 0x%x\n", **p);
+    long *p = malloc(sizeof (long *));
+    ,*p = (long)p;  /* cast isn't required here */
+    printf("p    0x%lx\n",  p);
+    printf("*p   0x%lx\n",  *p);
+    printf("**p  0x%lx\n",  **(long **)p);
+    printf("***p 0x%lx\n",  ***(long ***)p);
   }
 #+end_src
 
 #+RESULTS:
+| p    | 0x558366a4c2a0 |
+| *p   | 0x558366a4c2a0 |
+| **p  | 0x558366a4c2a0 |
+| ***p | 0x558366a4c2a0 |
 
-This code has a couple of issues. First, 
+Look at that! We've successfully created a pointer that points to
+itself! No matter how many times we dereference it, we are still
+looking at the same pointer.
+
+For fun, let's create a loop so we can deference the pointer as many
+times as we want very easily.
+
+#+begin_src C :includes stdio.h malloc.h :colnames '("i" "dereference")
+  int main() {
+    long *p = malloc(sizeof (long *));
+    ,*p = (long)p;
+    for (int i = 0; i < 5; i++) {
+      long ptemp = *p;
+      printf("%d 0x%lx\n", i, *p);
+      p = (long *)ptemp;
+    }
+  }
+#+end_src
+
+#+RESULTS:
+| i |    dereference |
+|---+----------------|
+| 0 | 0x55ffc15d32a0 |
+| 1 | 0x55ffc15d32a0 |
+| 2 | 0x55ffc15d32a0 |
+| 3 | 0x55ffc15d32a0 |
+| 4 | 0x55ffc15d32a0 |
+
+And there we go. This is one option for how we can implement a pointer
+that points to itself, no matter how many times we dereference it. If
+we wanted to, we add more pointers, creating a circularly linked list
+that looks like
+
+#+begin_src mermaid :file static/static/mermaid-circular-pointer-list-example.png :theme neutral
+graph LR
+p1 ---> p2
+p2 ---> p3
+p3 --> p4
+p4 --> p1
+#+end_src
+
+#+RESULTS:
+[[file:static/static/mermaid-circular-pointer-list-example.png]]
+
+**** Circular pointers with structs!
+
+Another option that saves us from all this casting is to use structs.
+Because a struct can contain anything[fn:3:Except for a struct
+containing itself directly.], even a pointer to a struct of
+the same type, we can do the following.
+
+#+begin_src C :includes stdio.h
+  struct p_self {
+    struct p_self *p;
+    int magic;
+  };
+
+  int main() {
+    struct p_self p = { .p = &p, .magic = 4032 };
+    printf("magic %d", p.p->p->p->p->p->magic);
+  }
+#+end_src
+
+#+RESULTS:
+: magic 4032
+
+To my knowledge, we can't make ~p~ a pointer to a struct very
+compactly. If we create a compound literal like
+
+#+begin_src C :eval no
+  struct p_self *p = &(struct p_self){ .p = /* problem */, .magic = 4032 };
+#+end_src
+
+we have a problem. The compound literal needs to contain a field that
+contains it's own address. I don't believe it is possible to do this,
+as there's no way to refer to the compound literal we are inside of.
+(This could be avoided by not using compound literals and introducing
+a second variable, but I'd rather not.)
+
+Regardless, what we can conclude from this is that pointers are weird
+and confusing and there's many little ways to mess up, especially as
+we do increasingly weird stuff with them. But it's fun!
 
 ** TODO Calculating a Fourier series in C, visualising one with GNUPlot :@fourier:
 
