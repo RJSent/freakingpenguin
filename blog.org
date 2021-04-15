@@ -369,7 +369,7 @@ forget about it, you will at least get a warning when undefined
 behavior occurs! I'd much rather have a program that doesn't work but
 I know why then a program that doesn't work and I don't know why.
 
-*** DONE Circular pointers in C
+*** DONE Circular pointers in C						  :C:
 CLOSED: [2021-04-15 Thu 12:35]
 :PROPERTIES:
 :EXPORT_DATE: [2021-04-15 Thu]
@@ -416,7 +416,7 @@ what's below. Because (spoilers) this code seg faults, I wrote a
 signal handler so we still see some kind of results. Calling most
 library functions in signal handlers is a bad idea, so I'm using the
 ~write()~ system call. Headers are excluded for compactness. I'm using
-~fflush()~ as ~printf()~ buffers it's output. If we exit through our
+~fflush()~ as ~printf()~ buffers its output. If we exit through our
 signal handler, the ~printf()~ is not printed.
 
 #+begin_comment
