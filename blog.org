@@ -592,7 +592,7 @@ looking at the same pointer.
 For fun, let's create a loop so we can deference the pointer as many
 times as we want very easily.
 
-#+begin_src C :includes stdio.h malloc.h :colnames '("i" "dereference")
+#+begin_src C :includes stdio.h malloc.h :colnames '("i" "dereference") :exports both
   int main() {
     long *p = malloc(sizeof (long *));
     ,*p = (long)p;
@@ -636,7 +636,7 @@ Because a struct can contain anything[fn:3:Except for a struct
 containing itself directly.], even a pointer to a struct of
 the same type, we can do the following.
 
-#+begin_src C :includes stdio.h
+#+begin_src C :includes <stdio.h> :exports both
   struct p_self {
     struct p_self *p;
     int magic;
