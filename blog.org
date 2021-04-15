@@ -369,6 +369,136 @@ forget about it, you will at least get a warning when undefined
 behavior occurs! I'd much rather have a program that doesn't work but
 I know why then a program that doesn't work and I don't know why.
 
+*** TODO Circular pointers in C
+:PROPERTIES:
+:EXPORT_DATE: [2021-04-15 Thu]
+:EXPORT_FILE_NAME: circular_pointers
+:END:
+
+#+begin_summary
+#+end_summary
+
+#+hugo: more
+
+**** What is a circular pointer?
+
+Full disclosure, I almost cannot think of any practical value to this
+post. It's provided also entirely as a "Huh, that's a weird thing you
+can do in C", rather than an actually useful technique. The only
+purpose I can see is to use them for a circularly linked list with one
+element. There may be another term that's in use, but I do not know
+what it is.
+
+A circular pointer is a pointer that, well, points to itself! No
+matter how many times we dereference that pointer, we should still be
+at the same spot. For example,
+
+#+begin_src mermaid :file static/static/mermaid-circular-pointer-example.png :theme neutral :background-color transparent :exports results
+graph BT
+p -->|*p| p
+#+end_src
+
+#+RESULTS:
+[[file:static/static/mermaid-circular-pointer-example.png]]
+
+Another way to think about it is ~****p == p~. Let's try to think of
+some ways to implement this!
+
+**** Failed Attempt
+
+The first thought that might come to our mind might be something like
+what's below. Because (spoilers) this code seg faults, I wrote a
+signal handler so we still see some kind of results. Calling most
+library functions in signal handlers is a bad idea, so I'm using the
+~write()~ system call. Headers are excluded for compactness. I'm using
+~fflush()~ as ~printf()~ buffers it's output. If we exit through our
+signal handler, the ~printf()~ is not printed.
+
+#+begin_comment
+ I'll be using the ~dup2()~ call so we can see what
+~stderr~ is printing, just like what we do in [[*Are bus errors still
+commonplace? Plus a bonus discussion on =org-babel=.][Are bus errors
+still commonplace?]]
+
+Insert internal links with [[* followed by C-M-i or <Esc> <Tab>.
+(M-TAB is intercepted by most DEs. )You can optionally type a few
+letters, but make sure there's no spaces between * and point, even if
+it's part of the heading.
+
+Not sure why =org-babel= is displayed in the link, it shouldn't be.
+
+Maybe I should use ~counsel-org-link~ instead.
+#+end_comment
+
+#+begin_src C :includes <stdio.h> <unistd.h> <signal.h> :results verbatim :exports both
+  void segfault(int sig_num) {
+    fflush(stdout);
+    write(STDOUT_FILENO, "Segfault!\n", 9);
+    _exit(0);
+  }
+
+  int main(void) {
+    signal(SIGSEGV, segfault);
+    int *p;
+    printf("p 0x%x\n", p);
+    ,*p = p; /* segfault occurs here */
+    printf("****p %x", ****(int ****)p);
+  }
+#+end_src
+
+#+RESULTS:
+: p 0x0
+: Segfault!
+
+If we walk through the code, we can figure out the problem. We
+allocate space for an integer pointer p, which contains 0. We then
+attempt to store the value in p, 0, in the value pointed to by p, 0.
+In other words, we're attempting to dereference a ~NULL~ pointer,
+causing a seg fault.
+
+**** Solution: malloc!
+
+Okay, so all we need to do is ~malloc()~ space for the pointer p to
+point to. Easy, right? Before we get to that though, there's one thing
+we have to remember. ~p~ is an ~int *~. If we try to do ~**p~, our
+compiler will complain about an invalid type argument. You can't
+dereference an ~int *~ twice!
+
+The compiler helpfully assumes that you would never dereference a
+pointer more than the number of pointers you have. In other words,
+
+#+begin_src C :include <stdio.h> <malloc.h>
+  int ****p = malloc(sizeof (int));
+  ,****p = 7;
+  printf("****p %d\n", ****p);
+#+end_src
+
+#+RESULTS:
+
+Well, you can see that our good friend the
+signal handler is still here, so maybe not.
+
+#+begin_src C :includes <stdio.h> <malloc.h> <unistd.h> <signal.h> :results verbatim :exports both
+  void segfault(int sig_num) {
+    fflush(stdout);
+    write(STDOUT_FILENO, "Segfault!\n", 9);
+    _exit(0);
+  }
+
+  int main(void) {
+    signal(SIGSEGV, segfault);
+    int *p = malloc(sizeof (int *));
+    ,*p = p;
+    printf(" p  0x%x\n",  p);
+    printf("*p  0x%x\n",  *p);
+    printf("**p 0x%x\n", **p);
+  }
+#+end_src
+
+#+RESULTS:
+
+This code has a couple of issues. First, 
+
 ** TODO Calculating a Fourier series in C, visualising one with GNUPlot :@fourier:
 
 *** Fourier Part 1: What is a Fourier series? :C:math:gnuplot:GSL:
