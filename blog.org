@@ -1497,13 +1497,13 @@ bytes of data. Sounds like a problem, doesn't it?
 
 So creating a 512 byte frame buffer is a bust. Fortunately though,
 there are some ways I could work around this! One option, and the one
-I went with, was to increase draw half the display at a time! I
+I went with, was to only draw half the display at a time! I
 created a function in =ssd1306.h= with the following signature.
 
 #+begin_src C :eval no
   /* I dunno if an enum is the best way to do this, but I'm doing it! */
   typedef enum { RIGHT, LEFT } ssd1306_side_t;
-  /* ......... */
+  /* ... */
   /* Draw the frame buffer to the selected side */
   signed char draw_half(ssd1306_side_t side);
 #+end_src
@@ -1534,9 +1534,35 @@ Let's take a look at how ~draw_half()~ works, shall we?
 I have two arrays with 7 bytes of data in them called
 ~change_start_right~ and ~change_start_left~. When ~draw_half(LEFT)~
 is called, I send ~change_start_left~ to the display, and vice versa.
+[fn:4:That ~sizeof~ nonsense lets me add and remove elements to
+~change_start_*~ without needing to change the second argument to
+~send_data()~.] When ~change_start_left~ is sent, the pixel
+addressing looks like
 
-That ~sizeof~ nonsense lets me add and remote elements to
-~change_start_*~ without needing to change the second argument to ~send_data()~.
+[[file:static/static/stm8-card-addressing-left.png]]
+
+and when ~change_start_right~ is sent
+
+[[file:static/static/stm8-card-addressing-right.png]]
+
+Obviously this is a little scaled down compared to a 128x32 pixel
+display, but it illustrates the point. The first bit of my frame
+buffer is sent to the top left of the half we are on, then we move
+across horizontally until reaching the halfway point. We then jump
+down a row and repeat!
+
+For completeness, ~draw_frame_buffer~ looks like
+
+#+begin_src C :eval no
+  struct S {
+    uint8_t control_byte;
+    uint8_t frame_buffer[BUF_SIZE];
+  } SSD1306_Data = {.control_byte = CONTROL_BYTE(CO_DATA, DC_DATA)};
+  /* ... */
+  signed char draw_frame_buffer() {
+    return send_data(&SSD1306_Data.control_byte, sizeof(struct S));
+  }
+#+end_src
 
 *** TODO stm8-card: Part 1
 :PROPERTIES:
