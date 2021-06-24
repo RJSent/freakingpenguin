@@ -1436,6 +1436,108 @@ uart --- registers
 #+RESULTS:
 [[file:static/static/mermaid-stm8-card-dep-graph-current.png]]
 
+*** TODO stm8-card: Frame Buffers
+:PROPERTIES:
+:EXPORT_FILE_NAME: stm8-card-frame-buffer
+:END:
+
+#+begin_summary
+Here I explain how I solved a challenging issue related to memory
+limitations in my PCB business card. 
+#+end_summary
+
+#+hugo: more
+
+**** Background
+
+I recently designed and fabricated a printed circuit board (PCB)
+business card. I used a STM8S003F3 microcontroller along with a
+SSD1306 display. This business card has my name, contact info, and
+other information on a silkscreen layer. The microcontroller runs a
+"space-invaders-esque" game, communicating with the display over I2C.
+
+You can view the code and board files [[https:gitlab.com/rjsent/stm8_card][here]].
+
+The most natural way to control a display is to create what's called a
+/frame buffer/. We would allocate enough space in the microcontrollers
+memory so that every pixel is 1 bit. Every time we want to change the
+display, we can just set or reset bits in the frame buffer, and then
+transmit the entire frame buffer.
+
+However, eight bit microcontrollers are very resource limited. My display's
+dimensions are 128x32, or 4096 pixels. If I used 1 bit to represent
+each pixel, I will use 512 bytes of RAM. The microcontroller I'm
+using has 1024 bytes.
+
+This doesn't sound so bad, right? I have over twice the memory needed
+for my frame buffer! Well, there's a /slight/ issue.
+
+Of those 1024 bytes, 512 are reserved for the /stack/. The stack keeps
+track of where we are in the program, local variables that are in use,
+and similar. As you might expect, that means the stack is
+*absolutely essential*. We obviously can't chop out the entire stack
+for our frame buffer. It's possible to only store part of our frame
+buffer where the stack is, but it's challenging to determine how much
+of the stack is in use at any time. The stack could overwrite part of
+our frame buffer as we jump between functions, which would corrupt our
+display into a mess of pixels.
+
+Okay, so we went from having 1024 bytes of memory in the microcontroller to 512.
+That's still enough for our frame buffer, so what's the big deal?
+Well, I need to store more stuff than just the frame buffer outside of
+the stack. The space invaders code (=space_invaders.c=) has several
+/statically allocated/ variables. That means these variables are not
+stored in the stack, but in that 512 bytes area. (It works out to
+about 176 bytes.)
+
+Now we're down to 336 bytes, which somehow needs to represent 512
+bytes of data. Sounds like a problem, doesn't it?
+
+**** Making due with less, drawing a display without a complete frame buffer
+
+So creating a 512 byte frame buffer is a bust. Fortunately though,
+there are some ways I could work around this! One option, and the one
+I went with, was to increase draw half the display at a time! I
+created a function in =ssd1306.h= with the following signature.
+
+#+begin_src C :eval no
+  /* I dunno if an enum is the best way to do this, but I'm doing it! */
+  typedef enum { RIGHT, LEFT } ssd1306_side_t;
+  /* ......... */
+  /* Draw the frame buffer to the selected side */
+  signed char draw_half(ssd1306_side_t side);
+#+end_src
+
+Let's take a look at how ~draw_half()~ works, shall we?
+
+#+begin_src C :eval n
+  signed char draw_half(ssd1306_side_t side) {
+    const uint8_t change_start_right[7] = {CONTROL_BYTE(CO_DATA, DC_COMMAND),
+      CMD_ADDR_COL, SSD1306_WIDTH / 2, SSD1306_WIDTH - 1,
+      CMD_ADDR_PAGE, 0, 3};
+    const uint8_t change_start_left[7] = {CONTROL_BYTE(CO_DATA, DC_COMMAND),
+      CMD_ADDR_COL, 0, SSD1306_WIDTH / 2 - 1,
+      CMD_ADDR_PAGE, 0, 3};
+    int err;
+    if (side == RIGHT) {
+      err = send_data(change_start_right, sizeof(change_start_right) / sizeof(change_start_right[0]));
+    } else {
+      err = send_data(change_start_left, sizeof(change_start_left) / sizeof(change_start_left[0]));
+    }
+    if (err != 0) return err;
+
+    draw_frame_buffer();
+    return 0;
+  }
+#+end_src
+
+I have two arrays with 7 bytes of data in them called
+~change_start_right~ and ~change_start_left~. When ~draw_half(LEFT)~
+is called, I send ~change_start_left~ to the display, and vice versa.
+
+That ~sizeof~ nonsense lets me add and remote elements to
+~change_start_*~ without needing to change the second argument to ~send_data()~.
+
 *** TODO stm8-card: Part 1
 :PROPERTIES:
 :EXPORT_FILE_NAME: stm8-card-1
