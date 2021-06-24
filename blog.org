@@ -1551,7 +1551,7 @@ buffer is sent to the top left of the half we are on, then we move
 across horizontally until reaching the halfway point. We then jump
 down a row and repeat!
 
-For completeness, ~draw_frame_buffer~ looks like
+For completeness, ~draw_frame_buffer()~ looks like
 
 #+begin_src C :eval no
   struct S {
@@ -1563,6 +1563,30 @@ For completeness, ~draw_frame_buffer~ looks like
     return send_data(&SSD1306_Data.control_byte, sizeof(struct S));
   }
 #+end_src
+
+Every transmission needs to start with a control byte. I can't start a
+transmission, send a control byte, stop it, start a new one, and send
+the frame buffer. It needs to be one continuous message.
+~send_bytes()~ (which is just a wrapper for ~i2c_send_bytes()~) takes
+an array of data and a size, and will just send that array over. In
+other words, I can't tell ~i2c_send_bytes()~ "Hey, send this byte
+first, then send these 256 bytes".
+
+I could make ~frame_buffer~ a 257 byte array, and remember that the
+first byte represents the control byte, not pixels. This is an ugly
+solution in my eyes and will complicate later code. Instead,
+remembering that an array is just a block of continuous memory, I
+found a second solution. I created a structure with the control byte
+first, followed by the frame buffer. The elements in a structure are
+continuous [fn:5:Sorta. There is something called structure "padding".
+However, since I'm dealing with 8 bit data in an 8 bit
+microcontroller, it's not an issue. Even if that wasn't enough, the
+fact that everything is 8 bits or an array of 8 bit elements, padding
+won't be added. /Technically/ though I don't know if the C standard
+guarantees this. Some compilers support structure "packing" with a
+compile-time flag, which is guaranteed to prevent this issue. I am
+using SDCC, which does not.], so to ~send_bytes()~, this is just a 257
+byte array.
 
 *** TODO stm8-card: Part 1
 :PROPERTIES:
