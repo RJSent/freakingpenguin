@@ -1588,6 +1588,65 @@ compile-time flag, which is guaranteed to prevent this issue. I am
 using SDCC, which does not.], so to ~send_bytes()~, this is just a 257
 byte array.
 
+**** Manipulating the frame buffer: drawing images
+
+We're almost done here. There's just one element missing. If I had a
+512 byte frame buffer, I could easily draw an image (e.g. spaceship)
+by going to the x and y coordinates in the frame buffer, then drawing
+the pixels. I chose to use two different structs to represent images.
+
+#+begin_src C :eval no
+  #define MAX_FRAMES    (4) /* up to 4 frames of animation */
+  /* ... */
+  struct Image {
+    const char width;
+    const char height;
+    const uint8_t *pixels;
+  };
+
+  struct DrawableImage {
+    signed char x;
+    signed char y;
+    unsigned char state;
+    const struct Image *images[MAX_FRAMES];
+  };
+#+end_src
+
+~Image~  is a struct that contains the raw data of the image, along
+with the dimensions so it is drawn properly. For instance, if I want
+to represent
+
+[[file:static/static/stm8-card-image-struct.png]]
+
+as a struct, I would write
+
+#+begin_src C :eval no
+  const uint8_t spaceship_pixels[24] = {
+    0x21, 0x00, 0x00,
+    0x41, 0x80, 0x00,
+    0x21, 0xC1, 0xC0,
+    0x8F, 0xFF, 0xFF,
+    0x0F, 0xFF, 0xFF,
+    0x81, 0xC1, 0xC0,
+    0x41, 0x80, 0x00,
+    0x61, 0x00, 0x00
+  };
+
+  const struct Image spaceship_image = {
+    .width = 24, .height = 8, .pixels = spaceship_pixels
+  };
+#+end_src
+
+This ~spaceship_image~ variable contains everything I need to know
+about the image itself. Because I separated ~Image~ and
+~DrawableImage~, I can declare my ~Image~ structs as ~const~. This
+means the array of pixels, width, and height are all stored in program
+(flash) memory, not RAM. Otherwise, I'd be very limited after using
+257 bytes for my frame buffer and 512 for the stack, with only 255
+left for everything else.
+
+ 
+
 *** TODO stm8-card: Part 1
 :PROPERTIES:
 :EXPORT_FILE_NAME: stm8-card-1
