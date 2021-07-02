@@ -1436,7 +1436,8 @@ uart --- registers
 #+RESULTS:
 [[file:static/static/mermaid-stm8-card-dep-graph-current.png]]
 
-*** TODO stm8-card: Frame Buffers
+*** DONE stm8-card: Frame Buffers
+CLOSED: [2021-06-24 Thu 17:30]
 :PROPERTIES:
 :EXPORT_FILE_NAME: stm8-card-frame-buffer
 :END:
