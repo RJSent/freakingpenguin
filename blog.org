@@ -1664,7 +1664,11 @@ also want my images to be animated, so I have an array of pointers to
 ~Image~ structs. That's what ~const struct Image *images[MAX_FRAMES];~
 means. ~images~ is an array of pointers to const Image structures.
 
- 
+The ~x~ and ~y~ fields of the ~DrawableImage~ structure tell us the
+coordinates of the top left pixel of the display. ~state~ is the frame
+of animation we're on. Every time we want to move the image to a new
+frame, all we have to do is increment ~state~, while ensuring it's a
+valid number.
 
 ***** Using these structs to draw on the display
 
@@ -1698,7 +1702,6 @@ Here's the first few lines of code of ~draw_image()~.
     if (image == NULL) return -1;
     char width = image->images[image->state]->width;
     char need_redraw = 0;                                         /* flag for if any pixels outside bounds of buffer */
-    if (side == LEFT && image->x > BUF_WIDTH) return need_redraw; /* don't waste time drawing images that don't appear */
     /* ... */
 #+end_src
 
@@ -1719,7 +1722,26 @@ pointer, get the ~Image~ structure for the current frame of animation
 we're on, then get the ~width~ of that ~Image~ structure).
 
 ~need_redraw~ is a flag variable. If the image we're drawing is
-partially or fully on the other half of the screen, it will be set to ~REDRAW_OTHER_HALF~,
+partially or fully on the other half of the screen, it will be set to
+~REDRAW_OTHER_HALF~, telling whatever function called this one "Hey,
+this ~DrawableImage~ needs to be drawn again later".
+
+Next up,
+
+#+begin_src C :eval no
+  if (side == LEFT && image->x > BUF_WIDTH) return need_redraw; /* don't waste time drawing images that don't appear */
+  if (side == RIGHT && image->x + width < BUF_WIDTH) return need_redraw;
+#+end_src
+
+If we're on the left half of the screen and the x coordinate of the
+top left of our image is > than the halfway coordinate of our display,
+then we need to draw the image again! Remember, the coordinates tell
+us the location of the top left pixel of the ~DrawableImage~.
+
+There's actually a bug here at the time of this writing. I need to
+return ~REDRAW_OTHER_HALF~ (if I want the code to exit immediately).
+As ~need_redraw~ was not set yet, I am returning ~0~, meaning
+the image does not need to be redrawn!
 
 *** TODO stm8-card: Part 1
 :PROPERTIES:
