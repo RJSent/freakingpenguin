@@ -1591,9 +1591,13 @@ byte array.
 **** Manipulating the frame buffer: drawing images
 
 We're almost done here. There's just one element missing. If I had a
-512 byte frame buffer, I could easily draw an image (e.g. spaceship)
+512 byte frame buffer, I could easily draw an image (e.g. a spaceship)
 by going to the x and y coordinates in the frame buffer, then drawing
-the pixels. I chose to use two different structs to represent images.
+the pixels.
+
+***** Representing images with structs
+
+I chose to use two different structs to represent images.
 
 #+begin_src C :eval no
   #define MAX_FRAMES    (4) /* up to 4 frames of animation */
@@ -1637,15 +1641,85 @@ as a struct, I would write
   };
 #+end_src
 
+This pixels array goes from the top left pixel of the image (red
+square), left to right, marking which pixels need to be on. ~0x21~
+means the 3rd pixel ~0b0010~ and the 8th pixel ~0b0001~ are both lit,
+while the rest of that row is off. Because I include the width and
+height, I know when I need to wrap around to the next row, as well as
+how many rows there are in total. (In theory I could remove ~height~
+as the pixel array length + width can be used to calculate the height.
+~height = sizeof(spaceship_pixels) / (width/8)~)
+
 This ~spaceship_image~ variable contains everything I need to know
 about the image itself. Because I separated ~Image~ and
 ~DrawableImage~, I can declare my ~Image~ structs as ~const~. This
 means the array of pixels, width, and height are all stored in program
 (flash) memory, not RAM. Otherwise, I'd be very limited after using
-257 bytes for my frame buffer and 512 for the stack, with only 255
-left for everything else.
+257 bytes for my frame buffer and 512 bytes for the stack, with only
+255 bytes left for everything else.
+
+By doing so, the ~DrawableImage~ struct has to contain a pointer to
+the ~Image~ struct, as they are in different locations in memory. I
+also want my images to be animated, so I have an array of pointers to
+~Image~ structs. That's what ~const struct Image *images[MAX_FRAMES];~
+means. ~images~ is an array of pointers to const Image structures.
 
  
+
+***** Using these structs to draw on the display
+
+So, hopefully now we understand how I represent images using two
+separate structures. By doing so, I can combine related data together,
+hopefully making it easier to actually draw them on the display. I
+want to have a method called ~draw_image()~ in =ssd1306.c/h= that
+takes a ~DrawableImage~ structure, then modifies the frame buffer so
+that the correct pixels are lit up. The next time the frame buffer is
+transmitted, the display should update accordingly.
+
+Because my frame buffer is split in half, there's one other thing that
+I need to pass ~draw_image()~. The ~DrawableImage~ can be located
+anywhere on the display, on either half. If I am going to use the
+frame buffer to update the left half of the display, and I send a
+~DrawableImage~ that's located on the right half, nothing should
+update. If the ~DrawableImage~ is in between the two halves, only part
+of it should be drawn. Therefore I have a second argument called ~side~ that
+tells ~draw_image()~ how the ~DrawableImage~ should be drawn depending
+on which half we're on. (e.g. If the ~DrawableImage~ is on the left half
+but ~side~ says ~RIGHT~, don't change any pixels in the frame buffer!)
+
+Here's the first few lines of code of ~draw_image()~.
+
+#+begin_src C :eval no
+  /* in ssd1306.h */
+  #define REDRAW_OTHER_HALF                         (1)
+  /* in ssd1306.c */
+
+  signed char draw_image(struct DrawableImage *image, ssd1306_side_t side) {
+    if (image == NULL) return -1;
+    char width = image->images[image->state]->width;
+    char need_redraw = 0;                                         /* flag for if any pixels outside bounds of buffer */
+    if (side == LEFT && image->x > BUF_WIDTH) return need_redraw; /* don't waste time drawing images that don't appear */
+    /* ... */
+#+end_src
+
+First, we perform a simple check to help verify that the ~DrawableImage~ is
+valid. If we did not perform this check, we'd be drawing garbage on
+the screen! This actually was a big issue for several days that wasn't
+immediately obvious. I changed an unrelated part of my code to return
+~NULL~ under certain conditions, but wasn't checking if the image was
+~NULL~ when calling ~draw_image()~. This is what that looked like.
+
+[[file:static/static/stm8-card-null_pointer_glich_157fd06.mp4]]
+
+I declare two variables, ~width~ and ~need_redraw~. ~width~ is just a
+shorthand so I don't need to write
+~image->images[image->state]->width~ every time. (This monstrosity
+means "go to the ~DrawableImage~ struct pointed to by the ~image~
+pointer, get the ~Image~ structure for the current frame of animation
+we're on, then get the ~width~ of that ~Image~ structure).
+
+~need_redraw~ is a flag variable. If the image we're drawing is
+partially or fully on the other half of the screen, it will be set to ~REDRAW_OTHER_HALF~,
 
 *** TODO stm8-card: Part 1
 :PROPERTIES:
