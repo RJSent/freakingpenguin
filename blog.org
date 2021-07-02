@@ -1691,6 +1691,8 @@ tells ~draw_image()~ how the ~DrawableImage~ should be drawn depending
 on which half we're on. (e.g. If the ~DrawableImage~ is on the left half
 but ~side~ says ~RIGHT~, don't change any pixels in the frame buffer!)
 
+****** Breaking apart ~draw_image()~
+
 Here's the first few lines of code of ~draw_image()~.
 
 #+begin_src C :eval no
@@ -1712,7 +1714,7 @@ immediately obvious. I changed an unrelated part of my code to return
 ~NULL~ under certain conditions, but wasn't checking if the image was
 ~NULL~ when calling ~draw_image()~. This is what that looked like.
 
-[[file:static/static/stm8-card-null_pointer_glich_157fd06.mp4]]
+https://gitlab.com/RJSent/stm8_card/-/blob/master/media/null_pointer_glich_157fd06.mp4
 
 I declare two variables, ~width~ and ~need_redraw~. ~width~ is just a
 shorthand so I don't need to write
@@ -1726,15 +1728,14 @@ partially or fully on the other half of the screen, it will be set to
 ~REDRAW_OTHER_HALF~, telling whatever function called this one "Hey,
 this ~DrawableImage~ needs to be drawn again later".
 
-Next up,
-
 #+begin_src C :eval no
-  if (side == LEFT && image->x > BUF_WIDTH) return need_redraw; /* don't waste time drawing images that don't appear */
+  /* don't waste time drawing images that don't appear */
+  if (side == LEFT && image->x > BUF_WIDTH) return need_redraw;
   if (side == RIGHT && image->x + width < BUF_WIDTH) return need_redraw;
 #+end_src
 
 If we're on the left half of the screen and the x coordinate of the
-top left of our image is > than the halfway coordinate of our display,
+top left of our image is greater than the halfway coordinate of our display,
 then we need to draw the image again! Remember, the coordinates tell
 us the location of the top left pixel of the ~DrawableImage~.
 
@@ -1742,6 +1743,131 @@ There's actually a bug here at the time of this writing. I need to
 return ~REDRAW_OTHER_HALF~ (if I want the code to exit immediately).
 As ~need_redraw~ was not set yet, I am returning ~0~, meaning
 the image does not need to be redrawn!
+
+****** The really ugly part of ~draw_image()~
+
+Heads up. This next part is a doozy comparatively.
+
+#+begin_src C :eval no
+  for (int i = 0; i < image->images[image->state]->height; i++) {
+    for (int j = 0; j < width; j++) {
+      /* ... */
+#+end_src
+
+We have two nested for loops that will iterate through the pixels of
+the ~Image~. Unfortunately, because this is C, there's no concept of a
+~Pixel~ type. I need to use as little storage as possible, so I have
+my pixels represented as an array of 8-bit characters.
+
+#+begin_src C :eval no
+  unsigned char subscript = (i * width + j) / 8;
+  unsigned char bit_num = 7 - (i * width + j) % 8;
+  /* ... */
+#+end_src
+
+~subscript~ tells me which 8-bit sequence will contain the pixel I
+need. Similarly, ~bit_num~ is the number of the specific bit within
+the bit. For example, ~subscript = 2~ and ~bit_num = 3~ means I will
+be looking at the 4th bit within the 3rd byte. By looking at this bit,
+I'll know if the pixel should be on or off.
+
+#+begin_src C :eval no
+  if ((image->images[image->state]->pixels[subscript] & (1 << (bit_num))) != 0) {
+    /* ... */
+#+end_src
+
+And that's exactly what I do! I access the pixel data through a fairly
+obtuse chain of arrow (~->~) operators, testing if the specific bit is
+high or low. If it is high, I continue.
+
+Technically, I could ~clear~ the pixel if it is zero. This would prevent
+images from overlapping, which I don't want.
+
+#+begin_src C :eval no
+  signed char xcord = image->x + j, ycord = image->y + i;
+  /* ... */
+#+end_src
+
+After that, I need to generate the ~x~ and ~y~ coordinates to place
+the pixel. Because I already have the coordinate for the top left of
+my image, I just need to add my ~i~ and ~j~ values to find the
+coordinates of the pixel!
+
+#+begin_src C :eval no
+  if (side == RIGHT) xcord -= SSD1306_WIDTH / 2;
+#+end_src
+
+There's one last small adjustment I need to make. My frame buffer is
+half the width of the display. (64x32 instead of 128x32). If I want to
+draw on the right half of the display and try using the x coordinate
+without modifying it, I'll be attempting to draw a pixel outside of my
+frame buffer! So, I subtract 64 from the x coordinate if ~side~ is
+~RIGHT~, protecting against this.
+
+#+begin_src C :eval no
+  if (draw_pixel(xcord, ycord) == INVALID) need_redraw = REDRAW_OTHER_HALF;
+#+end_src
+
+Before returning ~need_redraw~, I have one final thing to do. Actually
+updating the pixel in my frame buffer! In the interest of space, I
+won't actually go into the details of how ~draw_pixel()~ works.
+Suffice to say that it takes a coordinate between ~(0, 0)~ and ~(63,
+31)~, toggling the correct bit in the frame buffer. If that coordinate
+is invalid, it returns ~INVALID~. By checking the return value, I will
+know if any coordinates of my image fall outside of that area,
+suggesting it is either corrupt or—more likely—on the other half of
+the screen, meaning the image needs to be redrawn to fully appear on
+the display.
+
+**** Using ~draw_image()~ and pals to draw on a display
+
+By this point, you are probably confused as to how this code actually
+works. I talked a lot about drawing and redrawing the display.
+Hopefullly a brief example of using these methods will help. Here is a
+modified snippet of code in my ~main()~ method that is run in an
+infinite loop.
+
+#+begin_src C :eval no
+      for (int i = 0; i < 3; i++) {
+	lasers[i] = debug_drawableimage_playerlaser(i);
+	invader_lasers[i] = debug_drawableimage_invaderlaser(i);
+	invaders[i] = debug_drawableimage_invader(i);
+	draw_image(lasers[i], LEFT);
+	draw_image(invader_lasers[i], LEFT);
+	draw_image(invaders[i], LEFT);
+      }
+      draw_half(LEFT);
+      clear_buffer();
+      for (int i = 0; i < 3; i++) {
+	draw_image(lasers[i], RIGHT);
+	draw_image(invader_lasers[i], RIGHT);
+	draw_image(invaders[i], RIGHT);
+      }
+      draw_half(RIGHT);
+      clear_buffer();
+#+end_src
+
+ ~lasers[]~, ~invader_lasers[]~, and ~invaders[]~
+are all arrays of 3 ~DrawableImages~. First, I update the
+~DrawableImage~ to the most recent ones reported by my Space Invaders
+game. How Space Invaders creates these ~DrawableImages~ is not really
+relevent right now.
+
+I then attempt to draw the images on the left half of the screen. Some
+of these ~DrawableImages~ will not be drawn because they are on the
+right. This is totally fine! ~draw_image()~ does nothing in that case.
+
+~draw_half()~ will take the contents of the frame buffer, and send
+that information to the display. This is what physically causes the
+display to update, showing the new pixels on the screen. I then clear
+the buffer to all zeroes so that the left half will not overlap with
+the right half.
+
+This entire process is repeated on the right half.
+
+Here's the final result!
+
+https://gitlab.com/RJSent/stm8_card/-/blob/master/media/mostly_done.mp4
 
 *** TODO stm8-card: Part 1
 :PROPERTIES:
