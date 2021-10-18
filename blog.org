@@ -1875,6 +1875,145 @@ https://gitlab.com/RJSent/stm8_card/-/blob/master/media/mostly_done.mp4
 :EXPORT_FILE_NAME: stm8-card-1
 :END:
 
+** Fun times with STM32
+
+*** TODO Going above and beyond 8Mhz with the STM32F103
+:PROPERTIES:
+:EXPORT_FILE_NAME: stm32-pll-clk
+:END:
+
+#+begin_summary
+This is a short post describing my first attempts at programming and
+configuring the STM32F103.
+#+end_summary
+
+#+hugo: more
+
+**** Background
+
+Recently I've been experimenting with more powerful MCUs than the
+8-bit ones I'm used to. These microcontrollers are far more powerful,
+albeit with a higher price tag. On the other hand, the current silicon
+shortages means everything is either out-of-stock or expensive anyway!
+
+This swap was prompted by a project of mine. I am working on creating
+an 8x8 LED screen using the WS2812B controller. This controller
+requires signals to be sent using very precise timings (+/- 150ns). My
+trusty STM8 runs at 16MHz, which means it can execute an instruction
+about every 63ns. This means that I have very little headroom
+regarding signal timings. I was not able to get the timings precise
+enough to consistently control the LEDs, even when I mixed in some
+assembly into my C code. I figure I have two options at this point.
+
+1. Abandon C entirely for the STM8 project, and use handwritten
+   assembly for transmitting information to the LED controller. This
+   would give me very precise control over the timings, provided I'm
+   clever enough.
+
+2. Switch to a faster platform. The STM32F103 advertises a 72Mhz
+   clock, which is 4.5 times faster than what I have right now.
+   (Obviously there could be other factors influencing speed, but I
+   can still expect a significant performance uplift.
+
+I'll likely experiment with both options at some point, but this post
+deals with the second.
+
+**** Toolchains
+
+With my STM8, there were two main tools I used. The first is ~SDCC~,
+or ~Small Device C Compiler~. As you might expect given the name, this
+compiles my C code into STM8 assembly. The second is ~stm8flash~,
+which can flash my board using the ~ST-Link/V2~ device.
+
+The STM32F103, on the other hand, is not a "Small Device". My specific
+model has ~128KiB~ of flash (program) memory, which is 16 times the
+program memory that the STM8 has. This means my final program can be
+16 times as large. Similarly, the STM32F103 has ~20KiB~ of RAM while
+the STM8 has ~1KiB~, for a 20x increase. Along with this vast
+difference in scale, the STM32 uses the =ARM= architecture, with a
+Cortex-M3 processor. (If you're confused about naming, think of the
+Cortex-M3 as a CPU, while STM32F103 refers to the entire system.)
+
+Clearly ~SDCC~ won't work for this. I need to use a different
+toolchain. That toolchain is something you've probably used before,
+~GCC~! But not just any ~GCC~ will do. Recall how I said the
+~STM32F103~ used the =ARM= architecture. In order to compile C to
+valid ARM, I need to use the wonderfully named =arm-none-eabi-gcc= and
+friends.
+
+Fortunately flashing my program to the board is much simpler. The
+~ST-Link/V2~ device supports both the STM8 and STM32 platforms. I just
+need to use a different program on my computer to interface with the
+device. That program is [[https://github.com/stlink-org/stlink][stlink]].
+
+**** Uploading a *simple* and *easy* blinky program
+
+I didn't purchase a bare STM32F103 MCU, but a development board. This
+development board has an onboard LED that I can control with pin
+~C13~. In order to verify everything is working, I just need to toggle
+pin 13 and I can see a LED flash, no wiring required.
+
+Alright, let's write a simple blinky program!
+
+#+begin_src C
+  /* main.c */
+  #include <stdint.h>
+  
+  // register address
+  #define RCC_BASE      0x40021000
+  #define GPIOC_BASE    0x40011000
+  #define RCC_APB2ENR   *(volatile uint32_t *)(RCC_BASE   + 0x18)
+  #define GPIOC_CRH     *(volatile uint32_t *)(GPIOC_BASE + 0x04)
+  #define GPIOC_ODR     *(volatile uint32_t *)(GPIOC_BASE + 0x0C)
+  
+  // bit fields
+  #define RCC_IOPCEN   (1<<4)
+  #define GPIOC13      (1UL<<13)
+  
+  
+  int main(void)
+  {
+    RCC_APB2ENR |= RCC_IOPCEN;
+    GPIOC_CRH   &= 0xFF0FFFFF;
+    GPIOC_CRH   |= 0x00200000;
+  
+    while(1)
+      {
+	GPIOC_ODR |=  GPIOC13;
+	for (int i = 0; i < 500000; i++); // arbitrary delay
+	GPIOC_ODR &= ~GPIOC13;
+	for (int i = 0; i < 500000; i++); // arbitrary delay
+      }
+  }
+#+end_src
+
+Full disclosure, this is not my code (thanks to [[https://freeelectron.ro/bare-metal-stm32-led-blink/][Free Electron]]).
+Furthermore, this code does not run (by itself). And yet, it's
+completely correct! However, we're missing quite a lot of things.
+
+Like most (all?) microcontrollers, the STM32 has an ~Interrupt Vector
+Table~ (IVT). This table contains pointers to many different functions. When
+an interrupt occurs, the microcontrollers looks in the IVT and
+executes the corresponding function (called a handler).
+
+One of these handlers is called the Reset Handler, which will be
+stored at address ~0x8000_0004~. This reset handler is *always* the
+very first thing run on the microcontroller, even before ~main()~! In
+order for our program to run, we need to create a Reset Handler that
+(among other things) launches our ~main()~ function. We also need to
+ensure that this reset handler is stored in the correct location,
+~0x8000_0004~.
+
+To do this, we need to use a linker script. I won't include the
+linker script here due to length concerns, but hopefully this gives
+you an idea where to look if you begin trying to program this device
+yourself.
+
+When I used ~SDCC~, all of this background was hidden from me, or
+abstracted away. I only had to write my ~main()~ function, and ~SDCC~
+would ensure that the interrupt vector table had valid entries for
+everything, especially the Reset Handler. 
+
 * Local Variables						   :noexport:
 Local Variables:
 org-footnote-define-inline: t
