@@ -104,6 +104,64 @@ Outside of programming and physics, I enjoy the following:
 
 - List of projects, ala https://www.thomasvanderberg.nl/projects/
 
+** Visualizing Density of Types of Instructions
+
+- A general program that can visualize the density of different types
+  of instructions within a binary file
+
+  - Imagine a 1D/2D heatmap. If there's a high density of branch/control
+    instructions, the map is green. If there's a density of register
+    arithmetic instructions, the map is red, data definitions is blue, etc
+
+  - Goal is to help visualize program layout
+
+
+#+begin_src C :eval no
+  typedef struct color {
+    char red;
+    char green;
+    char blue;
+  } color;
+  
+  typedef union arm_instruction {
+    uint16_t thumb;
+    uint32_t arm;
+  } arm_instruction;
+  
+  typedef enum arm_type {
+    thumb;
+    arm;
+  };
+  
+  typedef struct arm {
+    arm_instruction instruction;
+    arm_type type;
+  } arm;
+  
+  static next_arm(FILE *file) {
+    uint32_t data = read_data(FILE *file);
+    arm_type type = get_type(data);
+    arm_instruction instruction = get_instruction(data, type);
+    arm arm = {
+      .instruction = instruction;
+      .type = type;
+    }
+      return arm;
+  }
+  
+  int main(void) {
+    int length = get_file_length(FILE);
+    color *colors = calloc(length);
+    int point = 0;
+    while (file != EOF) {
+      arm arm = next_arm(file);
+      color[point] = get_color(arm.type);
+    }
+    write_file(color_array_to_picture(colors, length));
+    return 0;
+  }
+#+end_src
+
 * Posts
 :PROPERTIES:
 :EXPORT_HUGO_SECTION: posts
@@ -2013,6 +2071,217 @@ When I used ~SDCC~, all of this background was hidden from me, or
 abstracted away. I only had to write my ~main()~ function, and ~SDCC~
 would ensure that the interrupt vector table had valid entries for
 everything, especially the Reset Handler. 
+
+*** TODO ~memset()~ commits seppuku
+:PROPERTIES:
+:EXPORT_FILE_NAME: stm32-memset-seppuku
+:END:
+
+#+begin_summary
+In this post I discuss my experiences debugging a ~memset()~ call
+causing a seg fault on the STM32F103.
+#+end_summary
+
+I wrote an embedded interface for controlling a long strip of
+WS2812B leds. This controller is passed a buffer filled with all the
+colors to adjust the LEDs to. To help the interface users, I have a
+~ws2812_reset_leds()~ function that clears this buffer.
+
+Originally the code to reset the LEDs looks like this.
+
+#+begin_src C :eval no
+void ws2812_reset_leds(ws2812_config_t *leds) {
+  if (validate_config(leds)) return;
+  for (unsigned int i = 0; i < leds->size; i++) {
+    leds->buffer[i] = color_off;
+   }
+}
+#+end_src
+
+Simple and clean. Check we're passed a valid pointer, then iterate
+through the buffer and set all the LED colors to 0, or ~color_off~.
+From looking at Pulseview, this took about *TEST 21f96bb timing*
+seconds, which (when combined with everything else,) means I can
+transmit *PLACEHOLDER* frames per second.
+
+However, what if I could be even faster? My intended solution to this
+was to use memset. Each element in the ~leds->buffer~ is 3 bytes long,
+without any padding. To clear this buffer, the ~memset()~ call would
+look like
+
+#+begin_src C :eval no
+  #include <string.h>
+  /* ... */
+  void ws2812_reset_leds(ws2812_config_t *leds) {
+    if (validate_config(leds)) return;
+    memset(leds->buffer, 0, leds->size * sizeof(leds->buffer[0]));
+  }
+#+end_src
+
+It's definitely much shorter! Theoretically, it should even be faster,
+as the compiler is better able to optimize this for our particular
+architecture. There's just one tiny little problem. It broke.
+
+Using my debugger and loading up GDB, I stepped through the program,
+verifying that it breaks when we step through or into the ~memset()~
+instruction. GDB screams at me, saying
+
+#+begin_quote
+Program received signal SIGSEGV, Segmentation fault.
+0x0800130c in ?? ()
+#+end_quote
+
+That's not great! Segmentation faults usually mean we're writing to an
+area we do not have access to. However, I know with 100% certainty the
+variables I pass to ~memset()~ are valid and correctly formatted. (I
+even sanity checked a few other configurations, like what if I only
+set the 1st byte to 0.
+
+This problem gets even weirder. Here's another configuration that
+throws a segfault.
+
+#+begin_src C :eval no
+  #include <string.h>
+  /* ... */
+  void ws2812_reset_leds(ws2812_config_t *leds) {
+    if (validate_config(leds)) return;
+    int array[10] = {0};
+    math_mag_set(array[9], 2);    /* included so GCC doesn't complain
+				     about an unused variable */
+  }
+#+end_src
+
+Huh? This code segfaults after ~validate_config()~ and before
+~math_mag_set()~. Besides, these functions don't write any data
+(Despite the name, ~math_mag_set()~ only returns a value, it doesn't
+take any pointers or attempt to write to any pointers).
+
+Somehow, the problem lies with initializing my array to 0.
+
+To figure out this conundrum, I have to leave the comfort of C behind
+and move over to assembly. It turns out then when you initialize an
+array or structure like this, C may call ~memset()~ behind the scenes!
+
+After launching GDB and attaching to the STM32, I can change from
+viewing the C source code to assembly with ~layout asm~. Here's what
+the assembly looks like.
+
+#+begin_src asm
+0x800089c <ws2812_reset_leds+10>        bl      0x8000680 <validate_config>
+0x80008a0 <ws2812_reset_leds+14>        mov     r3, r0
+0x80008a2 <ws2812_reset_leds+16>        cmp     r3, #0
+0x80008a4 <ws2812_reset_leds+18>        bne.n   0x80008c0 <ws2812_reset_leds+46>
+0x80008a6 <ws2812_reset_leds+20>        add.w   r3, r7, #8
+0x80008aa <ws2812_reset_leds+24>        movs    r2, #40 ; 0x28
+0x80008ac <ws2812_reset_leds+26>        movs r1, #0
+0x80008ae <ws2812_reset_leds+28>        mov r0, r3 
+0x80008b0 <ws2812_reset_leds+30>        bl 0x8000a58 <memset> 
+0x80008b4 <ws2812_reset_leds+34>        ldr r3, [r7, #44] ; 0x2c 
+0x80008b6 <ws2812_reset_leds+36>        movs r1, #2 
+0x80008b8 <ws2812_reset_leds+38>        mov r0, r3 
+0x80008ba <ws2812_reset_leds+40>        bl 0x800030e <math_mag_set>
+#+end_src
+
+Well, would you look at that! We're calling ~memset()~! I'm going to use
+~stepi~ (step-instruction) to see what happens when we call
+~memset()~.
+
+Here's the first four instructions of ~memset()~.
+
+#+begin_src asm
+0x8000a58 <memset>      movs    r3, r0
+0x8000a5a <memset+2>    b.n     0x800107e
+0x8000a5c <memset+4>    lsls    r0, r0, #1
+0x8000a5e <memset+6>    lsrs    r0, r0, #8
+#+end_src
+
+That ~b.n~ instruction is a branch instruction. It is going to send us
+to ~0x800107e~ and start executing code there. What does that code
+look like?
+
+#+begin_src asm
+0x800107e   movs        r0, r0
+0x8001080   movs        r0, r0
+0x8001082   movs        r0, r0
+0x8001084   movs        r0, r0
+0x8001086   movs        r0, r0
+0x8001088   movs        r0, r0
+0x800108a   movs        r0, r0
+0x800108c   movs        r0, r0
+0x800108e   movs        r0, r0
+#+end_src
+
+Oh dear. OH DEAR.
+
+Each instruction in ~ARM~ is really just a pattern of bits. These bits
+can be any pattern, and depending on that pattern, we get an
+instruction. Here's a fun question. What instruction do you think
+we'll get if the bits are ~0x00~?
+
+#+begin_comment
+~mov~ documention is here. Footnote?
+https://www.keil.com/support/man/docs/armasm/armasm_dom1361289878994.htm
+#+end_comment
+
+If you guess ~movs r0 r0~, congrats! Now, you might be thinking this
+is just because we're trying to initialize our array to 0. Not so!
+This code isn't doing anything at all. We're just moving register 0
+(~r0~) into itself "forever". 
+
+For whatever reason, ~memset()~ thinks that it needs to execute something
+at ~0x800107e~. We didn't even ~call~ it, so the ARM chip has no idea
+how to go back! We're now trapped here, pretending to do something
+productive, forever.
+
+Every instruction will increase our Program Counter ~(PC)~ and we'll
+execute the next instruction. I wasted 5 minutes of my life, single
+stepping through all of these ~movs r0 r0~ instructions. The ~movs r0
+r0~ instructions continued through ~0x80012fa~, stopping at
+~0x80012fc~, for a ~PC~ difference of ~0x26c~, which works out to
+*~320~ INSTRUCTIONS* (as PC jumps by 2 each time).
+
+Alas, nothing lasts forever. Here's what it looks like when
+interesting things start happening again.
+
+#+begin_src asm
+;; Last movs instruction before cool stuff below!
+0x80012fa   movs        r0, r0
+0x80012fc   lsls        r4, r6, #20
+0x80012fe   movs        r0, #0
+0x8001300   lsrs        r0, r1, #4
+0x8001302   lsrs        r0, r0, #32
+0x8001304   lsrs        r0, r1, #3
+0x8001306   lsrs        r0, r0, #32
+0x8001308   lsrs        r0, r3, #18
+0x800130a   lsrs        r0, r0, #32
+0x800130c               ; <UNDEFINED> instruction: 0xffffffff
+0x8001310               ; <UNDEFINED> instruction: 0xffffffff
+0x8001314               ; <UNDEFINED> instruction: 0xffffffff   
+#+end_src
+
+ ~lsls~  is a logical left shift (~lsl~) instruction, with an optional
+ suffix ~S~. It has three "arguments", ~Rd~, ~Rm~, and
+ ~#sh~[fn:6:~#sh~ can be another register Rs, but it isn't in our
+ case]. The flash memory is filled with random garbage here, and it
+ coincidentally happens to be a valid instruction.
+
+#+begin_comment
+~lsls~ documentation
+https://www.keil.com/support/man/docs/armasm/armasm_dom1361289876185.htm
+#+end_comment
+
+Fun fact! =main.bin=, which is what I'm flashing to the board, is
+~4876~ bytes long. My flash memory starts at ~0x8000000~. ~0x8000000 -
+0x800130c = 4876~! These instructions at the end of the =.bin= file
+are intended! I'm not sure what purpose they serve, but it's
+something!
+
+What isn't intended are those undefined instructions. The raw state of
+flash memory bits is 1. When you erase a flash device, everything
+returns to 1. Because I am not programming more than ~4876~ bits,
+everything past that point is all ones, which is an invalid
+instruction. Upon executing one, we segfault and die.
+
 
 * Local Variables						   :noexport:
 Local Variables:
