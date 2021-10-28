@@ -115,6 +115,9 @@ Outside of programming and physics, I enjoy the following:
 
   - Goal is to help visualize program layout
 
+- ~arm-none-eabi-objdump --prefix-addresses -D -z -b binary -m arm
+  build/main.bin > output.s~ can output instructions for me
+
 
 #+begin_src C :eval no
   typedef struct color {
